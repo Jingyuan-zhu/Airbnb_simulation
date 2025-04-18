@@ -1,0 +1,796 @@
+---
+  openapi: "3.0.0"
+  info: 
+    title: "Airbnb Simulation API"
+    description: "API for accessing Airbnb listings, hosts, and analytics data"
+    version: "1.0.0"
+  servers: 
+    - 
+      url: "http://localhost:8080"
+      description: "Local development server"
+  paths: 
+    /home: 
+      get: 
+        summary: "Get home page statistics"
+        description: "Returns basic statistics about listings"
+        operationId: "getHome"
+        responses: 
+          200: 
+            description: "Home page statistics"
+            content: 
+              application/json: 
+                schema: 
+                  type: "object"
+                  properties: 
+                    total_listings: 
+                      type: "integer"
+                      description: "Total number of listings"
+                    avg_price: 
+                      type: "number"
+                      format: "float"
+                      description: "Average price of all listings"
+                    total_neighborhoods: 
+                      type: "integer"
+                      description: "Total number of unique neighborhoods"
+    /listings: 
+      get: 
+        summary: "Get paginated listings"
+        description: "Returns a paginated list of listings"
+        operationId: "getListings"
+        parameters: 
+          - 
+            name: "page"
+            in: "query"
+            description: "Page number"
+            schema: 
+              type: "integer"
+              default: 1
+          - 
+            name: "page_size"
+            in: "query"
+            description: "Number of listings per page"
+            schema: 
+              type: "integer"
+              default: 10
+        responses: 
+          200: 
+            description: "List of listings"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    $ref: "#/components/schemas/ListingSummary"
+    /listings/search: 
+      get: 
+        summary: "Search listings"
+        description: "Search listings based on multiple criteria"
+        operationId: "searchListings"
+        parameters: 
+          - 
+            name: "page"
+            in: "query"
+            description: "Page number"
+            schema: 
+              type: "integer"
+              default: 1
+          - 
+            name: "page_size"
+            in: "query"
+            description: "Number of listings per page"
+            schema: 
+              type: "integer"
+              default: 10
+          - 
+            name: "name"
+            in: "query"
+            description: "Listing name search term"
+            schema: 
+              type: "string"
+          - 
+            name: "neighbourhood_cleansed"
+            in: "query"
+            description: "Neighbourhood search term"
+            schema: 
+              type: "string"
+          - 
+            name: "room_type_simple"
+            in: "query"
+            description: "Room type"
+            schema: 
+              type: "string"
+          - 
+            name: "price_low"
+            in: "query"
+            description: "Minimum price"
+            schema: 
+              type: "number"
+              default: 0
+          - 
+            name: "price_high"
+            in: "query"
+            description: "Maximum price"
+            schema: 
+              type: "number"
+              default: 100000
+          - 
+            name: "latitude_low"
+            in: "query"
+            description: "Minimum latitude"
+            schema: 
+              type: "number"
+              default: -90
+          - 
+            name: "latitude_high"
+            in: "query"
+            description: "Maximum latitude"
+            schema: 
+              type: "number"
+              default: 90
+          - 
+            name: "longitude_low"
+            in: "query"
+            description: "Minimum longitude"
+            schema: 
+              type: "number"
+              default: -180
+          - 
+            name: "longitude_high"
+            in: "query"
+            description: "Maximum longitude"
+            schema: 
+              type: "number"
+              default: 180
+          - 
+            name: "accommodates_low"
+            in: "query"
+            description: "Minimum accommodates"
+            schema: 
+              type: "integer"
+              default: 1
+          - 
+            name: "accommodates_high"
+            in: "query"
+            description: "Maximum accommodates"
+            schema: 
+              type: "integer"
+              default: 100
+          - 
+            name: "bathrooms_low"
+            in: "query"
+            description: "Minimum bathrooms"
+            schema: 
+              type: "number"
+              default: 0
+          - 
+            name: "bathrooms_high"
+            in: "query"
+            description: "Maximum bathrooms"
+            schema: 
+              type: "number"
+              default: 50
+          - 
+            name: "bedrooms_low"
+            in: "query"
+            description: "Minimum bedrooms"
+            schema: 
+              type: "number"
+              default: 0
+          - 
+            name: "bedrooms_high"
+            in: "query"
+            description: "Maximum bedrooms"
+            schema: 
+              type: "number"
+              default: 50
+          - 
+            name: "beds_low"
+            in: "query"
+            description: "Minimum beds"
+            schema: 
+              type: "number"
+              default: 0
+          - 
+            name: "beds_high"
+            in: "query"
+            description: "Maximum beds"
+            schema: 
+              type: "number"
+              default: 100
+        responses: 
+          200: 
+            description: "List of matched listings"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    $ref: "#/components/schemas/Listing"
+    /listings/{id}: 
+      get: 
+        summary: "Get a listing by ID"
+        description: "Returns detailed information about a specific listing"
+        operationId: "getListing"
+        parameters: 
+          - 
+            name: "id"
+            in: "path"
+            required: true
+            description: "Listing ID"
+            schema: 
+              type: "integer"
+              format: "int64"
+        responses: 
+          200: 
+            description: "Listing details"
+            content: 
+              application/json: 
+                schema: 
+                  $ref: "#/components/schemas/Listing"
+    /listings/{id}/reviews: 
+      get: 
+        summary: "Get reviews for a listing"
+        description: "Returns reviews for a specific listing"
+        operationId: "getReviews"
+        parameters: 
+          - 
+            name: "id"
+            in: "path"
+            required: true
+            description: "Listing ID"
+            schema: 
+              type: "integer"
+              format: "int64"
+          - 
+            name: "page"
+            in: "query"
+            description: "Page number"
+            schema: 
+              type: "integer"
+              default: 1
+          - 
+            name: "page_size"
+            in: "query"
+            description: "Number of reviews per page"
+            schema: 
+              type: "integer"
+              default: 10
+        responses: 
+          200: 
+            description: "List of reviews"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    $ref: "#/components/schemas/Review"
+    /hosts: 
+      get: 
+        summary: "Get paginated hosts"
+        description: "Returns a paginated list of hosts"
+        operationId: "getHosts"
+        parameters: 
+          - 
+            name: "page"
+            in: "query"
+            description: "Page number"
+            schema: 
+              type: "integer"
+              default: 1
+          - 
+            name: "page_size"
+            in: "query"
+            description: "Number of hosts per page"
+            schema: 
+              type: "integer"
+              default: 10
+        responses: 
+          200: 
+            description: "List of hosts"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    $ref: "#/components/schemas/Host"
+    /hosts/experienced: 
+      get: 
+        summary: "Get experienced hosts"
+        description: "Returns hosts with the longest presence on the platform"
+        operationId: "getExperiencedHosts"
+        responses: 
+          200: 
+            description: "List of experienced hosts"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      host_id: 
+                        type: "integer"
+                        format: "int64"
+                      host_name: 
+                        type: "string"
+                      experience: 
+                        type: "integer"
+                      total_listings_count: 
+                        type: "number"
+    /hosts/types: 
+      get: 
+        summary: "Get host types comparison"
+        description: "Compares performance metrics between Superhosts and non-Superhosts"
+        operationId: "getHostTypes"
+        responses: 
+          200: 
+            description: "Host types comparison data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      neighbourhood_cleansed: 
+                        type: "string"
+                      host_type: 
+                        type: "string"
+                        enum: 
+                          - "Superhost"
+                          - "Non-Superhost"
+                      avg_rating: 
+                        type: "number"
+                      avg_reviews_per_month: 
+                        type: "number"
+                      avg_price: 
+                        type: "number"
+                      num_listings: 
+                        type: "integer"
+    /hosts/interactions: 
+      get: 
+        summary: "Get host interactions data"
+        description: "Returns data about hosts with good interaction reviews"
+        operationId: "getHostInteractions"
+        parameters: 
+          - 
+            name: "page"
+            in: "query"
+            description: "Page number"
+            schema: 
+              type: "integer"
+              default: 1
+          - 
+            name: "page_size"
+            in: "query"
+            description: "Number of results per page"
+            schema: 
+              type: "integer"
+              default: 10
+        responses: 
+          200: 
+            description: "Host interactions data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      neighbourhood_cleansed: 
+                        type: "string"
+                      bedrooms: 
+                        type: "number"
+                      avg_rating_good_interaction_hosts: 
+                        type: "number"
+                      avg_price_good_interaction_hosts: 
+                        type: "number"
+                      count_listings_good_interaction_hosts: 
+                        type: "integer"
+                      avg_rating_other_hosts: 
+                        type: "number"
+                      avg_price_other_hosts: 
+                        type: "number"
+                      count_listings_other_hosts: 
+                        type: "integer"
+    /hosts/verified: 
+      get: 
+        summary: "Get verified hosts data"
+        description: "Returns statistics about verified hosts"
+        operationId: "getHostVerified"
+        parameters: 
+          - 
+            name: "only_verified"
+            in: "query"
+            description: "Filter to only include verified hosts"
+            schema: 
+              type: "boolean"
+              default: false
+        responses: 
+          200: 
+            description: "Verified hosts statistics"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      identity_verified: 
+                        type: "boolean"
+                      number_of_hosts: 
+                        type: "integer"
+                      percentage_of_total: 
+                        type: "number"
+    /analytics/high-performers: 
+      get: 
+        summary: "Get high performer hosts"
+        description: "Returns hosts who consistently deliver high-quality experiences"
+        operationId: "getHighPerformerHosts"
+        parameters: 
+          - 
+            name: "min_listings"
+            in: "query"
+            description: "Minimum number of listings"
+            schema: 
+              type: "integer"
+              default: 3
+          - 
+            name: "min_rating"
+            in: "query"
+            description: "Minimum rating"
+            schema: 
+              type: "number"
+              default: 4.7
+          - 
+            name: "order_by"
+            in: "query"
+            description: "Field to order results by"
+            schema: 
+              type: "string"
+              enum: 
+                - "host_name"
+                - "total_listings_count"
+                - "average_value_score_across_listings"
+                - "min_listing_rating"
+        responses: 
+          200: 
+            description: "High performer hosts data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      host_id: 
+                        type: "integer"
+                        format: "int64"
+                      host_name: 
+                        type: "string"
+                      total_listings_count: 
+                        type: "number"
+                      average_value_score_across_listings: 
+                        type: "number"
+                      min_listing_rating: 
+                        type: "number"
+    /neighbourhoods: 
+      get: 
+        summary: "Get neighbourhoods"
+        description: "Returns a list of unique neighbourhoods"
+        operationId: "getNeighbourhoods"
+        responses: 
+          200: 
+            description: "List of neighbourhoods"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      neighbourhood: 
+                        type: "string"
+    /analytics/overview: 
+      get: 
+        summary: "Get market overview"
+        description: "Returns average cost and density of listings across neighbourhoods"
+        operationId: "getOverview"
+        responses: 
+          200: 
+            description: "Market overview data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      neighbourhood_cleansed: 
+                        type: "string"
+                      number_of_listings: 
+                        type: "integer"
+                      average_price: 
+                        type: "number"
+    /analytics/room_types: 
+      get: 
+        summary: "Get room types data"
+        description: "Returns statistics about available room types"
+        operationId: "getRoomTypes"
+        responses: 
+          200: 
+            description: "Room types statistics"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      room_type_simple: 
+                        type: "string"
+                      number_of_listings: 
+                        type: "integer"
+                      percentage_of_total: 
+                        type: "number"
+    /analytics/room_type_sentiment: 
+      get: 
+        summary: "Get room type sentiment data"
+        description: "Returns sentiment analysis data by room type"
+        operationId: "getRoomTypeSentiment"
+        parameters: 
+          - 
+            name: "room_type"
+            in: "query"
+            description: "Filter by specific room type"
+            schema: 
+              type: "string"
+        responses: 
+          200: 
+            description: "Room type sentiment data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      room_type: 
+                        type: "string"
+                      percent_positive_reviews: 
+                        type: "number"
+                      number_of_listings: 
+                        type: "integer"
+    /analytics/monthly_price: 
+      get: 
+        summary: "Get monthly price data"
+        description: "Returns price trends over time"
+        operationId: "getMonthlyPrice"
+        parameters: 
+          - 
+            name: "after"
+            in: "query"
+            description: "Start date (YYYY-MM-DD)"
+            schema: 
+              type: "string"
+              format: "date"
+              default: "1900-01-01"
+          - 
+            name: "before"
+            in: "query"
+            description: "End date (YYYY-MM-DD)"
+            schema: 
+              type: "string"
+              format: "date"
+              default: "2100-01-01"
+        responses: 
+          200: 
+            description: "Monthly price data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      review_month: 
+                        type: "string"
+                      listings_reviewed_count: 
+                        type: "integer"
+                      average_price_of_reviewed_listings: 
+                        type: "number"
+    /analytics/hidden_gems: 
+      get: 
+        summary: "Get hidden gems"
+        description: "Returns highly rated, high-value listings with relatively few reviews"
+        operationId: "getHiddenGems"
+        parameters: 
+          - 
+            name: "min_rating"
+            in: "query"
+            description: "Minimum rating"
+            schema: 
+              type: "number"
+              default: 4.8
+        responses: 
+          200: 
+            description: "Hidden gems data"
+            content: 
+              application/json: 
+                schema: 
+                  type: "array"
+                  items: 
+                    type: "object"
+                    properties: 
+                      listing_id: 
+                        type: "integer"
+                        format: "int64"
+                      listing_name: 
+                        type: "string"
+                      neighbourhood_cleansed: 
+                        type: "string"
+                      room_type_simple: 
+                        type: "string"
+                      scores_rating: 
+                        type: "number"
+                      scores_value: 
+                        type: "number"
+                      number_of_reviews: 
+                        type: "integer"
+                      price: 
+                        type: "number"
+                      avg_neighbourhood_reviews: 
+                        type: "number"
+                      avg_neighbourhood_price_for_room_type: 
+                        type: "number"
+  components: 
+    schemas: 
+      ListingSummary: 
+        type: "object"
+        properties: 
+          id: 
+            type: "integer"
+            format: "int64"
+          name: 
+            type: "string"
+          neighbourhood: 
+            type: "string"
+          room_type: 
+            type: "string"
+          price: 
+            type: "number"
+          number_of_reviews: 
+            type: "integer"
+      Listing: 
+        type: "object"
+        properties: 
+          id: 
+            type: "integer"
+            format: "int64"
+          host_id: 
+            type: "integer"
+            format: "int64"
+          name: 
+            type: "string"
+          description: 
+            type: "string"
+          picture_url: 
+            type: "string"
+          neighbourhood_cleansed: 
+            type: "string"
+          latitude: 
+            type: "number"
+            format: "float"
+          longitude: 
+            type: "number"
+            format: "float"
+          accommodates: 
+            type: "integer"
+          bathrooms: 
+            type: "number"
+            format: "float"
+          bedrooms: 
+            type: "number"
+            format: "float"
+          beds: 
+            type: "number"
+            format: "float"
+          price: 
+            type: "number"
+            format: "float"
+          room_type_simple: 
+            type: "string"
+      Host: 
+        type: "object"
+        properties: 
+          host_id: 
+            type: "integer"
+            format: "int64"
+          host_name: 
+            type: "string"
+          response_time: 
+            type: "string"
+          response_rate: 
+            type: "number"
+            format: "float"
+          acceptance_rate: 
+            type: "number"
+            format: "float"
+          is_superhost: 
+            type: "boolean"
+          total_listings_count: 
+            type: "number"
+            format: "float"
+          identity_verified: 
+            type: "boolean"
+          listings_count_entire_homes: 
+            type: "integer"
+          listings_count_private_rooms: 
+            type: "integer"
+          listings_count_shared_rooms: 
+            type: "integer"
+          years_experience: 
+            type: "number"
+            format: "float"
+      Review: 
+        type: "object"
+        properties: 
+          listing_id: 
+            type: "integer"
+            format: "int64"
+          id: 
+            type: "integer"
+            format: "int64"
+          date: 
+            type: "string"
+            format: "date"
+          reviewer_id: 
+            type: "integer"
+            format: "int64"
+          reviewer_name: 
+            type: "string"
+          comments: 
+            type: "string"
+          sentiment: 
+            type: "string"
+            enum: 
+              - "Positive"
+              - "Neutral"
+              - "Negative"
+      ReviewInfo: 
+        type: "object"
+        properties: 
+          id: 
+            type: "integer"
+            format: "int64"
+          number_of_reviews: 
+            type: "integer"
+          number_of_reviews_ltm: 
+            type: "integer"
+          number_of_reviews_l30d: 
+            type: "integer"
+          scores_rating: 
+            type: "number"
+            format: "float"
+          scores_accuracy: 
+            type: "number"
+            format: "float"
+          scores_cleanliness: 
+            type: "number"
+            format: "float"
+          scores_checkin: 
+            type: "number"
+            format: "float"
+          scores_communication: 
+            type: "number"
+            format: "float"
+          scores_location: 
+            type: "number"
+            format: "float"
+          scores_value: 
+            type: "number"
+            format: "float"
+          reviews_per_month: 
+            type: "number"
+            format: "float"
+

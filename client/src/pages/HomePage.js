@@ -17,7 +17,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
         Airbnb London Explorer
       </Typography>
@@ -42,7 +42,7 @@ export default function HomePage() {
               flexDirection: 'column',
               alignItems: 'center',
               height: 140,
-              bgcolor: 'primary.light',
+              bgcolor: 'primary.main',
               color: 'white'
             }}
           >
@@ -63,7 +63,7 @@ export default function HomePage() {
               flexDirection: 'column',
               alignItems: 'center',
               height: 140,
-              bgcolor: 'secondary.light',
+              bgcolor: 'success.main',
               color: 'white'
             }}
           >
@@ -84,7 +84,7 @@ export default function HomePage() {
               flexDirection: 'column',
               alignItems: 'center',
               height: 140,
-              bgcolor: 'info.light',
+              bgcolor: 'error.light',
               color: 'white'
             }}
           >

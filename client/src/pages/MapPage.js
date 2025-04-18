@@ -14,7 +14,7 @@ export default function MapPage() {
   }, []);
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
         London Neighborhoods Map
       </Typography>
@@ -44,9 +44,9 @@ export default function MapPage() {
               sx={{ 
                 p: 2, 
                 textAlign: 'center',
-                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                backgroundColor: 'background.paper',
                 '&:hover': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                  backgroundColor: 'action.hover',
                 }
               }}
             >
