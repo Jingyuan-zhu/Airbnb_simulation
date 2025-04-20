@@ -1,25 +1,451 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Airbnb Simulation API",
-    "description": "API for accessing Airbnb listings, hosts, and analytics data",
-    "version": "1.0.0"
+    "title": "Airbnb Visualisation API",
+    "description": "API for accessing and analyzing Airbnb listing data",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Support",
+      "email": "support@example.com"
+    }
   },
   "servers": [
     {
       "url": "http://localhost:8080",
-      "description": "Local development server"
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Home",
+      "description": "Basic statistics about the dataset"
+    },
+    {
+      "name": "Listings",
+      "description": "Operations related to Airbnb listings"
+    },
+    {
+      "name": "Hosts",
+      "description": "Operations related to Airbnb hosts"
+    },
+    {
+      "name": "Neighbourhoods",
+      "description": "Operations related to neighborhoods"
+    },
+    {
+      "name": "Analytics",
+      "description": "Advanced analytics and data insights"
+    },
+    {
+      "name": "Reviews",
+      "description": "Listing reviews"
     }
   ],
   "paths": {
-    "/home": {
+    "/analytics/overview": {
       "get": {
-        "summary": "Get home page statistics",
-        "description": "Returns basic statistics about listings",
-        "operationId": "getHome",
+        "summary": "Get neighborhood overview statistics",
+        "description": "Shows the average cost and density of listings across different London neighborhoods",
+        "tags": [
+          "Analytics"
+        ],
         "responses": {
           "200": {
-            "description": "Home page statistics",
+            "description": "List of neighborhoods with listing count and average price",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "neighbourhood_cleansed": {
+                        "type": "string",
+                        "description": "Neighborhood name"
+                      },
+                      "number_of_listings": {
+                        "type": "integer",
+                        "description": "Number of listings in this neighborhood"
+                      },
+                      "average_price": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average price of listings in this neighborhood"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/room_types": {
+      "get": {
+        "summary": "Get room type distribution",
+        "description": "Provides a breakdown of the types of accommodations available",
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "Distribution of listings by room type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "room_type_simple": {
+                        "type": "string",
+                        "description": "Type of room (e.g., Entire home/apt, Private room)"
+                      },
+                      "number_of_listings": {
+                        "type": "integer",
+                        "description": "Number of listings with this room type"
+                      },
+                      "percentage_of_total": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Percentage of total listings with this room type"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/room_type_sentiment": {
+      "get": {
+        "summary": "Get sentiment analysis by room type",
+        "description": "Summarizes the proportion of listings by room type that typically receive positive feedback",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "room_type",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter results by specific room type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sentiment analysis by room type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "room_type": {
+                        "type": "string",
+                        "description": "Type of room"
+                      },
+                      "percent_positive_reviews": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Percentage of positive reviews for this room type"
+                      },
+                      "number_of_listings": {
+                        "type": "integer",
+                        "description": "Number of listings with this room type"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/monthly_price": {
+      "get": {
+        "summary": "Get monthly price trends",
+        "description": "Provides an estimated trend of average listing prices over time, grouped by month",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "after",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter results after this date (YYYY-MM-DD format, defaults to 1900-01-01)"
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter results before this date (YYYY-MM-DD format, defaults to 2100-01-01)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly price trends over time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "review_month": {
+                        "type": "string",
+                        "description": "Month in YYYY-MM format"
+                      },
+                      "listings_reviewed_count": {
+                        "type": "integer",
+                        "description": "Number of listings reviewed in this month"
+                      },
+                      "average_price_of_reviewed_listings": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average price of listings reviewed in this month"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/hidden_gems": {
+      "get": {
+        "summary": "Find hidden gem listings",
+        "description": "Finds highly rated, high-value listings with relatively few reviews and low price compared to neighbourhood norms",
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "min_rating",
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "description": "Minimum rating threshold for hidden gems (default is 4.8)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of hidden gem listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "listing_id": {
+                        "type": "integer",
+                        "description": "Unique identifier of the listing"
+                      },
+                      "listing_name": {
+                        "type": "string",
+                        "description": "Name of the listing"
+                      },
+                      "neighbourhood_cleansed": {
+                        "type": "string",
+                        "description": "Neighborhood where the listing is located"
+                      },
+                      "room_type_simple": {
+                        "type": "string",
+                        "description": "Type of room"
+                      },
+                      "scores_rating": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Overall rating score"
+                      },
+                      "scores_value": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Value for money rating"
+                      },
+                      "number_of_reviews": {
+                        "type": "integer",
+                        "description": "Number of reviews for this listing"
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Price per night"
+                      },
+                      "avg_neighbourhood_reviews": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average number of reviews for listings in this neighborhood"
+                      },
+                      "avg_neighbourhood_price_for_room_type": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average price for this room type in this neighborhood"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/home": {
+      "get": {
+        "summary": "Get basic statistics about the Airbnb listings",
+        "description": "Returns aggregate information including total listings count, average price, and total neighborhoods",
+        "tags": [
+          "Home"
+        ],
+        "responses": {
+          "200": {
+            "description": "Basic statistics about listings",
             "content": {
               "application/json": {
                 "schema": {
@@ -27,7 +453,7 @@
                   "properties": {
                     "total_listings": {
                       "type": "integer",
-                      "description": "Total number of listings"
+                      "description": "Total number of listings in the database"
                     },
                     "avg_price": {
                       "type": "number",
@@ -42,319 +468,18 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/listings": {
-      "get": {
-        "summary": "Get paginated listings",
-        "description": "Returns a paginated list of listings",
-        "operationId": "getListings",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Page number",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
           },
-          {
-            "name": "page_size",
-            "in": "query",
-            "description": "Number of listings per page",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of listings",
+          "500": {
+            "description": "Database error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ListingSummary"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/listings/search": {
-      "get": {
-        "summary": "Search listings",
-        "description": "Search listings based on multiple criteria",
-        "operationId": "searchListings",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Page number",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "description": "Number of listings per page",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          },
-          {
-            "name": "name",
-            "in": "query",
-            "description": "Listing name search term",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "neighbourhood_cleansed",
-            "in": "query",
-            "description": "Neighbourhood search term",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "room_type_simple",
-            "in": "query",
-            "description": "Room type",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "price_low",
-            "in": "query",
-            "description": "Minimum price",
-            "schema": {
-              "type": "number",
-              "default": 0
-            }
-          },
-          {
-            "name": "price_high",
-            "in": "query",
-            "description": "Maximum price",
-            "schema": {
-              "type": "number",
-              "default": 100000
-            }
-          },
-          {
-            "name": "latitude_low",
-            "in": "query",
-            "description": "Minimum latitude",
-            "schema": {
-              "type": "number",
-              "default": -90
-            }
-          },
-          {
-            "name": "latitude_high",
-            "in": "query",
-            "description": "Maximum latitude",
-            "schema": {
-              "type": "number",
-              "default": 90
-            }
-          },
-          {
-            "name": "longitude_low",
-            "in": "query",
-            "description": "Minimum longitude",
-            "schema": {
-              "type": "number",
-              "default": -180
-            }
-          },
-          {
-            "name": "longitude_high",
-            "in": "query",
-            "description": "Maximum longitude",
-            "schema": {
-              "type": "number",
-              "default": 180
-            }
-          },
-          {
-            "name": "accommodates_low",
-            "in": "query",
-            "description": "Minimum accommodates",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "accommodates_high",
-            "in": "query",
-            "description": "Maximum accommodates",
-            "schema": {
-              "type": "integer",
-              "default": 100
-            }
-          },
-          {
-            "name": "bathrooms_low",
-            "in": "query",
-            "description": "Minimum bathrooms",
-            "schema": {
-              "type": "number",
-              "default": 0
-            }
-          },
-          {
-            "name": "bathrooms_high",
-            "in": "query",
-            "description": "Maximum bathrooms",
-            "schema": {
-              "type": "number",
-              "default": 50
-            }
-          },
-          {
-            "name": "bedrooms_low",
-            "in": "query",
-            "description": "Minimum bedrooms",
-            "schema": {
-              "type": "number",
-              "default": 0
-            }
-          },
-          {
-            "name": "bedrooms_high",
-            "in": "query",
-            "description": "Maximum bedrooms",
-            "schema": {
-              "type": "number",
-              "default": 50
-            }
-          },
-          {
-            "name": "beds_low",
-            "in": "query",
-            "description": "Minimum beds",
-            "schema": {
-              "type": "number",
-              "default": 0
-            }
-          },
-          {
-            "name": "beds_high",
-            "in": "query",
-            "description": "Maximum beds",
-            "schema": {
-              "type": "number",
-              "default": 100
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of matched listings",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Listing"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/listings/{id}": {
-      "get": {
-        "summary": "Get a listing by ID",
-        "description": "Returns detailed information about a specific listing",
-        "operationId": "getListing",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Listing ID",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Listing details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Listing"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/listings/{id}/reviews": {
-      "get": {
-        "summary": "Get reviews for a listing",
-        "description": "Returns reviews for a specific listing",
-        "operationId": "getReviews",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Listing ID",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Page number",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "description": "Number of reviews per page",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of reviews",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Review"
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
                   }
                 }
               }
@@ -365,38 +490,126 @@
     },
     "/hosts": {
       "get": {
-        "summary": "Get paginated hosts",
-        "description": "Returns a paginated list of hosts",
-        "operationId": "getHosts",
+        "summary": "Get paginated host information",
+        "description": "Returns a paginated list of Airbnb hosts with their details",
+        "tags": [
+          "Hosts"
+        ],
         "parameters": [
           {
-            "name": "page",
             "in": "query",
-            "description": "Page number",
+            "name": "page",
             "schema": {
               "type": "integer",
-              "default": 1
-            }
+              "minimum": 1
+            },
+            "description": "Page number for pagination (default is 1)"
           },
           {
-            "name": "page_size",
             "in": "query",
-            "description": "Number of hosts per page",
+            "name": "page_size",
             "schema": {
               "type": "integer",
-              "default": 10
-            }
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page (default is 10, max 100)"
           }
         ],
         "responses": {
           "200": {
-            "description": "List of hosts",
+            "description": "A list of hosts",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Host"
+                    "type": "object",
+                    "properties": {
+                      "host_id": {
+                        "type": "integer",
+                        "description": "Unique identifier of the host"
+                      },
+                      "host_name": {
+                        "type": "string",
+                        "description": "Name of the host"
+                      },
+                      "response_time": {
+                        "type": "string",
+                        "description": "Typical response time of the host"
+                      },
+                      "response_rate": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Host response rate percentage"
+                      },
+                      "acceptance_rate": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Host acceptance rate percentage"
+                      },
+                      "is_superhost": {
+                        "type": "boolean",
+                        "description": "Whether the host is a superhost"
+                      },
+                      "total_listings_count": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Total number of listings this host has"
+                      },
+                      "identity_verified": {
+                        "type": "boolean",
+                        "description": "Whether the host's identity is verified"
+                      },
+                      "listings_count_entire_homes": {
+                        "type": "integer",
+                        "description": "Number of entire home/apt listings"
+                      },
+                      "listings_count_private_rooms": {
+                        "type": "integer",
+                        "description": "Number of private room listings"
+                      },
+                      "listings_count_shared_rooms": {
+                        "type": "integer",
+                        "description": "Number of shared room listings"
+                      },
+                      "years_experience": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Years of experience as a host"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
                   }
                 }
               }
@@ -408,11 +621,13 @@
     "/hosts/experienced": {
       "get": {
         "summary": "Get experienced hosts",
-        "description": "Returns hosts with the longest presence on the platform",
-        "operationId": "getExperiencedHosts",
+        "description": "Shows the hosts with the longest presence on the platform within the dataset",
+        "tags": [
+          "Hosts"
+        ],
         "responses": {
           "200": {
-            "description": "List of experienced hosts",
+            "description": "List of experienced hosts sorted by years of experience",
             "content": {
               "application/json": {
                 "schema": {
@@ -422,17 +637,37 @@
                     "properties": {
                       "host_id": {
                         "type": "integer",
-                        "format": "int64"
+                        "description": "Unique identifier of the host"
                       },
                       "host_name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Name of the host"
                       },
                       "experience": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Years of experience as a host (rounded)"
                       },
                       "total_listings_count": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Total number of listings this host has"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
                     }
                   }
                 }
@@ -444,12 +679,15 @@
     },
     "/hosts/types": {
       "get": {
-        "summary": "Get host types comparison",
-        "description": "Compares performance metrics between Superhosts and non-Superhosts",
-        "operationId": "getHostTypes",
+        "summary": "Compare metrics between Superhosts and non-Superhosts",
+        "description": "Compares key performance metrics between listings managed by Superhosts and non-Superhosts within each neighborhood",
+        "tags": [
+          "Hosts",
+          "Analytics"
+        ],
         "responses": {
           "200": {
-            "description": "Host types comparison data",
+            "description": "Comparison of metrics between Superhosts and non-Superhosts by neighborhood",
             "content": {
               "application/json": {
                 "schema": {
@@ -458,24 +696,52 @@
                     "type": "object",
                     "properties": {
                       "neighbourhood_cleansed": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Neighborhood name"
                       },
                       "host_type": {
                         "type": "string",
-                        "enum": ["Superhost", "Non-Superhost"]
+                        "enum": [
+                          "Superhost",
+                          "Non-Superhost"
+                        ],
+                        "description": "Type of host"
                       },
                       "avg_rating": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average rating for this host type in the neighborhood"
                       },
                       "avg_reviews_per_month": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average reviews per month for this host type"
                       },
                       "avg_price": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average price for listings of this host type"
                       },
                       "num_listings": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Number of listings for this host type in the neighborhood"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
                     }
                   }
                 }
@@ -487,32 +753,36 @@
     },
     "/hosts/interactions": {
       "get": {
-        "summary": "Get host interactions data",
-        "description": "Returns data about hosts with good interaction reviews",
-        "operationId": "getHostInteractions",
+        "summary": "Compare metrics based on host interaction quality",
+        "description": "Compares listings with hosts known for good interaction versus other hosts by neighborhood and bedroom count",
+        "tags": [
+          "Hosts",
+          "Analytics"
+        ],
         "parameters": [
           {
-            "name": "page",
             "in": "query",
-            "description": "Page number",
+            "name": "page",
             "schema": {
               "type": "integer",
-              "default": 1
-            }
+              "minimum": 1
+            },
+            "description": "Page number for pagination (default is 1)"
           },
           {
-            "name": "page_size",
             "in": "query",
-            "description": "Number of results per page",
+            "name": "page_size",
             "schema": {
               "type": "integer",
-              "default": 10
-            }
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page (default is 10, max 100)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Host interactions data",
+            "description": "Comparison of metrics between hosts with good interaction and others",
             "content": {
               "application/json": {
                 "schema": {
@@ -521,29 +791,73 @@
                     "type": "object",
                     "properties": {
                       "neighbourhood_cleansed": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Neighborhood name"
                       },
                       "bedrooms": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Number of bedrooms"
                       },
                       "avg_rating_good_interaction_hosts": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average rating for hosts with good interaction"
                       },
                       "avg_price_good_interaction_hosts": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average price for listings with hosts with good interaction"
                       },
                       "count_listings_good_interaction_hosts": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Count of listings with hosts with good interaction"
                       },
                       "avg_rating_other_hosts": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average rating for other hosts"
                       },
                       "avg_price_other_hosts": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average price for listings with other hosts"
                       },
                       "count_listings_other_hosts": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Count of listings with other hosts"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
                     }
                   }
                 }
@@ -555,23 +869,25 @@
     },
     "/hosts/verified": {
       "get": {
-        "summary": "Get verified hosts data",
-        "description": "Returns statistics about verified hosts",
-        "operationId": "getHostVerified",
+        "summary": "Get hosts' identity verification stats",
+        "description": "Shows statistics about hosts' identity verification status",
+        "tags": [
+          "Hosts",
+          "Analytics"
+        ],
         "parameters": [
           {
-            "name": "only_verified",
             "in": "query",
-            "description": "Filter to only include verified hosts",
+            "name": "only_verified",
             "schema": {
-              "type": "boolean",
-              "default": false
-            }
+              "type": "boolean"
+            },
+            "description": "If true, only show stats for verified hosts (default is false)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Verified hosts statistics",
+            "description": "Statistics about hosts' identity verification",
             "content": {
               "application/json": {
                 "schema": {
@@ -580,14 +896,49 @@
                     "type": "object",
                     "properties": {
                       "identity_verified": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "Whether the identity is verified"
                       },
                       "number_of_hosts": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Number of hosts with this verification status"
                       },
                       "percentage_of_total": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Percentage of total hosts with this verification status"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
                     }
                   }
                 }
@@ -599,41 +950,50 @@
     },
     "/analytics/high-performers": {
       "get": {
-        "summary": "Get high performer hosts",
-        "description": "Returns hosts who consistently deliver high-quality experiences",
-        "operationId": "getHighPerformerHosts",
+        "summary": "Get high-performing hosts",
+        "description": "Returns hosts with a minimum number of listings and high ratings",
+        "tags": [
+          "Hosts",
+          "Analytics"
+        ],
         "parameters": [
           {
+            "in": "query",
             "name": "min_listings",
-            "in": "query",
-            "description": "Minimum number of listings",
-            "schema": {
-              "type": "integer",
-              "default": 3
-            }
-          },
-          {
-            "name": "min_rating",
-            "in": "query",
-            "description": "Minimum rating",
             "schema": {
               "type": "number",
-              "default": 4.7
-            }
+              "minimum": 1
+            },
+            "description": "Minimum number of listings a host must have (default is 3)"
           },
           {
-            "name": "order_by",
             "in": "query",
-            "description": "Field to order results by",
+            "name": "min_rating",
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "description": "Minimum rating a host's listings must have (default is 4.7)"
+          },
+          {
+            "in": "query",
+            "name": "order_by",
             "schema": {
               "type": "string",
-              "enum": ["host_name", "total_listings_count", "average_value_score_across_listings", "min_listing_rating"]
-            }
+              "enum": [
+                "host_name",
+                "total_listings_count",
+                "average_value_score_across_listings",
+                "min_listing_rating"
+              ]
+            },
+            "description": "Field to order the results by"
           }
         ],
         "responses": {
           "200": {
-            "description": "High performer hosts data",
+            "description": "List of high-performing hosts",
             "content": {
               "application/json": {
                 "schema": {
@@ -643,20 +1003,738 @@
                     "properties": {
                       "host_id": {
                         "type": "integer",
-                        "format": "int64"
+                        "description": "Unique identifier of the host"
                       },
                       "host_name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Name of the host"
                       },
                       "total_listings_count": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Total number of listings this host has"
                       },
                       "average_value_score_across_listings": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Average value score across all listings for this host"
                       },
                       "min_listing_rating": {
-                        "type": "number"
+                        "type": "number",
+                        "format": "float",
+                        "description": "Minimum rating among all listings for this host"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings": {
+      "get": {
+        "summary": "Get paginated listings",
+        "description": "Returns a paginated list of Airbnb listings with basic information",
+        "tags": [
+          "Listings"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Page number for pagination (default is 1)"
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page (default is 10, max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of Airbnb listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Unique identifier of the listing"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Name of the listing"
+                      },
+                      "neighbourhood": {
+                        "type": "string",
+                        "description": "Neighbourhood where the listing is located"
+                      },
+                      "room_type": {
+                        "type": "string",
+                        "description": "Type of room (e.g., Entire home/apt, Private room)"
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Price per night"
+                      },
+                      "number_of_reviews": {
+                        "type": "integer",
+                        "description": "Number of reviews for the listing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings/{listing_id}": {
+      "get": {
+        "summary": "Get a specific listing by ID",
+        "description": "Returns detailed information about a specific Airbnb listing",
+        "tags": [
+          "Listings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Unique identifier of the listing"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed information about a listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "host_id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "picture_url": {
+                      "type": "string"
+                    },
+                    "neighbourhood_cleansed": {
+                      "type": "string"
+                    },
+                    "latitude": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "longitude": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "accommodates": {
+                      "type": "integer"
+                    },
+                    "bathrooms": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "bedrooms": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "beds": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "price": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "room_type_simple": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid listing ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Listing not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings/search": {
+      "get": {
+        "summary": "Search for listings with filters",
+        "description": "Returns listings matching the specified filters with pagination",
+        "tags": [
+          "Listings"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Page number for pagination (default is 1)"
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page (default is 10, max 100)"
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by listing name (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "description",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by listing description (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "picture_url",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by picture URL (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "neighbourhood_cleansed",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by neighbourhood name (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "room_type_simple",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by room type (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "latitude_low",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Minimum latitude"
+          },
+          {
+            "in": "query",
+            "name": "latitude_high",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Maximum latitude"
+          },
+          {
+            "in": "query",
+            "name": "longitude_low",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Minimum longitude"
+          },
+          {
+            "in": "query",
+            "name": "longitude_high",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Maximum longitude"
+          },
+          {
+            "in": "query",
+            "name": "accommodates_low",
+            "schema": {
+              "type": "number",
+              "format": "integer"
+            },
+            "description": "Minimum accommodates count"
+          },
+          {
+            "in": "query",
+            "name": "accommodates_high",
+            "schema": {
+              "type": "number",
+              "format": "integer"
+            },
+            "description": "Maximum accommodates count"
+          },
+          {
+            "in": "query",
+            "name": "bathrooms_low",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Minimum bathrooms"
+          },
+          {
+            "in": "query",
+            "name": "bathrooms_high",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Maximum bathrooms"
+          },
+          {
+            "in": "query",
+            "name": "bedrooms_low",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Minimum bedrooms"
+          },
+          {
+            "in": "query",
+            "name": "bedrooms_high",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Maximum bedrooms"
+          },
+          {
+            "in": "query",
+            "name": "beds_low",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Minimum beds"
+          },
+          {
+            "in": "query",
+            "name": "beds_high",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Maximum beds"
+          },
+          {
+            "in": "query",
+            "name": "price_low",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Minimum price"
+          },
+          {
+            "in": "query",
+            "name": "price_high",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Maximum price"
+          },
+          {
+            "in": "query",
+            "name": "host_id_low",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Minimum host ID"
+          },
+          {
+            "in": "query",
+            "name": "host_id_high",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Maximum host ID"
+          },
+          {
+            "in": "query",
+            "name": "id_low",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Minimum listing ID"
+          },
+          {
+            "in": "query",
+            "name": "id_high",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Maximum listing ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of listings matching the specified filters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "host_id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "picture_url": {
+                        "type": "string"
+                      },
+                      "neighbourhood_cleansed": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "accommodates": {
+                        "type": "integer"
+                      },
+                      "bathrooms": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "bedrooms": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "beds": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "price": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "room_type_simple": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings/{listing_id}/reviews": {
+      "get": {
+        "summary": "Get reviews for a specific listing",
+        "description": "Returns paginated reviews for a specific Airbnb listing",
+        "tags": [
+          "Listings",
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Unique identifier of the listing"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Page number for pagination (default is 1)"
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page (default is 10, max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of reviews for the specified listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Unique identifier of the review"
+                      },
+                      "listing_id": {
+                        "type": "integer",
+                        "description": "ID of the listing this review belongs to"
+                      },
+                      "date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Date the review was posted"
+                      },
+                      "reviewer_id": {
+                        "type": "integer",
+                        "description": "ID of the reviewer"
+                      },
+                      "reviewer_name": {
+                        "type": "string",
+                        "description": "Name of the reviewer"
+                      },
+                      "comments": {
+                        "type": "string",
+                        "description": "Review text"
+                      },
+                      "sentiment": {
+                        "type": "string",
+                        "enum": [
+                          "Positive",
+                          "Neutral",
+                          "Negative"
+                        ],
+                        "description": "Sentiment analysis of the review"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
                     }
                   }
                 }
@@ -668,12 +1746,14 @@
     },
     "/neighbourhoods": {
       "get": {
-        "summary": "Get neighbourhoods",
-        "description": "Returns a list of unique neighbourhoods",
-        "operationId": "getNeighbourhoods",
+        "summary": "Get all unique neighbourhoods",
+        "description": "Returns a list of all unique neighbourhood names from the listings",
+        "tags": [
+          "Neighbourhoods"
+        ],
         "responses": {
           "200": {
-            "description": "List of neighbourhoods",
+            "description": "A list of unique neighbourhoods",
             "content": {
               "application/json": {
                 "schema": {
@@ -682,238 +1762,25 @@
                     "type": "object",
                     "properties": {
                       "neighbourhood": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Name of the neighbourhood"
                       }
                     }
                   }
                 }
               }
-            }
-          }
-        }
-      }
-    },
-    "/analytics/overview": {
-      "get": {
-        "summary": "Get market overview",
-        "description": "Returns average cost and density of listings across neighbourhoods",
-        "operationId": "getOverview",
-        "responses": {
-          "200": {
-            "description": "Market overview data",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "neighbourhood_cleansed": {
-                        "type": "string"
-                      },
-                      "number_of_listings": {
-                        "type": "integer"
-                      },
-                      "average_price": {
-                        "type": "number"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/analytics/room_types": {
-      "get": {
-        "summary": "Get room types data",
-        "description": "Returns statistics about available room types",
-        "operationId": "getRoomTypes",
-        "responses": {
-          "200": {
-            "description": "Room types statistics",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "room_type_simple": {
-                        "type": "string"
-                      },
-                      "number_of_listings": {
-                        "type": "integer"
-                      },
-                      "percentage_of_total": {
-                        "type": "number"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/analytics/room_type_sentiment": {
-      "get": {
-        "summary": "Get room type sentiment data",
-        "description": "Returns sentiment analysis data by room type",
-        "operationId": "getRoomTypeSentiment",
-        "parameters": [
-          {
-            "name": "room_type",
-            "in": "query",
-            "description": "Filter by specific room type",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Room type sentiment data",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "room_type": {
-                        "type": "string"
-                      },
-                      "percent_positive_reviews": {
-                        "type": "number"
-                      },
-                      "number_of_listings": {
-                        "type": "integer"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/analytics/monthly_price": {
-      "get": {
-        "summary": "Get monthly price data",
-        "description": "Returns price trends over time",
-        "operationId": "getMonthlyPrice",
-        "parameters": [
-          {
-            "name": "after",
-            "in": "query",
-            "description": "Start date (YYYY-MM-DD)",
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "default": "1900-01-01"
             }
           },
-          {
-            "name": "before",
-            "in": "query",
-            "description": "End date (YYYY-MM-DD)",
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "default": "2100-01-01"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Monthly price data",
+          "500": {
+            "description": "Database error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "review_month": {
-                        "type": "string"
-                      },
-                      "listings_reviewed_count": {
-                        "type": "integer"
-                      },
-                      "average_price_of_reviewed_listings": {
-                        "type": "number"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/analytics/hidden_gems": {
-      "get": {
-        "summary": "Get hidden gems",
-        "description": "Returns highly rated, high-value listings with relatively few reviews",
-        "operationId": "getHiddenGems",
-        "parameters": [
-          {
-            "name": "min_rating",
-            "in": "query",
-            "description": "Minimum rating",
-            "schema": {
-              "type": "number",
-              "default": 4.8
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Hidden gems data",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "listing_id": {
-                        "type": "integer",
-                        "format": "int64"
-                      },
-                      "listing_name": {
-                        "type": "string"
-                      },
-                      "neighbourhood_cleansed": {
-                        "type": "string"
-                      },
-                      "room_type_simple": {
-                        "type": "string"
-                      },
-                      "scores_rating": {
-                        "type": "number"
-                      },
-                      "scores_value": {
-                        "type": "number"
-                      },
-                      "number_of_reviews": {
-                        "type": "integer"
-                      },
-                      "price": {
-                        "type": "number"
-                      },
-                      "avg_neighbourhood_reviews": {
-                        "type": "number"
-                      },
-                      "avg_neighbourhood_price_for_room_type": {
-                        "type": "number"
-                      }
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
                     }
                   }
                 }
@@ -924,214 +1791,5 @@
       }
     }
   },
-  "components": {
-    "schemas": {
-      "ListingSummary": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "name": {
-            "type": "string"
-          },
-          "neighbourhood": {
-            "type": "string"
-          },
-          "room_type": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "number_of_reviews": {
-            "type": "integer"
-          }
-        }
-      },
-      "Listing": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "host_id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "picture_url": {
-            "type": "string"
-          },
-          "neighbourhood_cleansed": {
-            "type": "string"
-          },
-          "latitude": {
-            "type": "number",
-            "format": "float"
-          },
-          "longitude": {
-            "type": "number",
-            "format": "float"
-          },
-          "accommodates": {
-            "type": "integer"
-          },
-          "bathrooms": {
-            "type": "number",
-            "format": "float"
-          },
-          "bedrooms": {
-            "type": "number",
-            "format": "float"
-          },
-          "beds": {
-            "type": "number",
-            "format": "float"
-          },
-          "price": {
-            "type": "number",
-            "format": "float"
-          },
-          "room_type_simple": {
-            "type": "string"
-          }
-        }
-      },
-      "Host": {
-        "type": "object",
-        "properties": {
-          "host_id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "host_name": {
-            "type": "string"
-          },
-          "response_time": {
-            "type": "string"
-          },
-          "response_rate": {
-            "type": "number",
-            "format": "float"
-          },
-          "acceptance_rate": {
-            "type": "number",
-            "format": "float"
-          },
-          "is_superhost": {
-            "type": "boolean"
-          },
-          "total_listings_count": {
-            "type": "number",
-            "format": "float"
-          },
-          "identity_verified": {
-            "type": "boolean"
-          },
-          "listings_count_entire_homes": {
-            "type": "integer"
-          },
-          "listings_count_private_rooms": {
-            "type": "integer"
-          },
-          "listings_count_shared_rooms": {
-            "type": "integer"
-          },
-          "years_experience": {
-            "type": "number",
-            "format": "float"
-          }
-        }
-      },
-      "Review": {
-        "type": "object",
-        "properties": {
-          "listing_id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
-          "reviewer_id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "reviewer_name": {
-            "type": "string"
-          },
-          "comments": {
-            "type": "string"
-          },
-          "sentiment": {
-            "type": "string",
-            "enum": ["Positive", "Neutral", "Negative"]
-          }
-        }
-      },
-      "ReviewInfo": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "number_of_reviews": {
-            "type": "integer"
-          },
-          "number_of_reviews_ltm": {
-            "type": "integer"
-          },
-          "number_of_reviews_l30d": {
-            "type": "integer"
-          },
-          "scores_rating": {
-            "type": "number",
-            "format": "float"
-          },
-          "scores_accuracy": {
-            "type": "number",
-            "format": "float"
-          },
-          "scores_cleanliness": {
-            "type": "number",
-            "format": "float"
-          },
-          "scores_checkin": {
-            "type": "number",
-            "format": "float"
-          },
-          "scores_communication": {
-            "type": "number",
-            "format": "float"
-          },
-          "scores_location": {
-            "type": "number",
-            "format": "float"
-          },
-          "scores_value": {
-            "type": "number",
-            "format": "float"
-          },
-          "reviews_per_month": {
-            "type": "number",
-            "format": "float"
-          }
-        }
-      }
-    }
-  }
+  "components": {}
 }

@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CssBaseline } from "@mui/material";
 
 import NavBar from "./components/NavBar";
-import SideMenu from "./components/SideMenu";
 import HomePage from "./pages/HomePage";
 import ListingsPage from "./pages/ListingsPage";
 import ListingDetailPage from "./pages/ListingDetailPage";

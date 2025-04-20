@@ -1,7 +1,44 @@
-const connection = require('./db');
+const { connection, wrapAsync } = require('./db');
 
+/**
+ * @swagger
+ * /home:
+ *   get:
+ *     summary: Get basic statistics about the Airbnb listings
+ *     description: Returns aggregate information including total listings count, average price, and total neighborhoods
+ *     tags:
+ *       - Home
+ *     responses:
+ *       200:
+ *         description: Basic statistics about listings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_listings:
+ *                   type: integer
+ *                   description: Total number of listings in the database
+ *                 avg_price:
+ *                   type: number
+ *                   format: float
+ *                   description: Average price of all listings
+ *                 total_neighborhoods:
+ *                   type: integer
+ *                   description: Total number of unique neighborhoods
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Route: GET /home
-const getHome = async function (req, res) {
+const getHome = wrapAsync(async function (req, res) {
   // Get basic statistics about listings
   connection.query(
     `
@@ -14,13 +51,13 @@ const getHome = async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows[0]);
+        res.json(data.rows[0] || {});
       }
     }
   );
-};
+});
 
 module.exports = {
   getHome

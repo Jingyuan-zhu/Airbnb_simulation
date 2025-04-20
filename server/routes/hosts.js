@@ -1,7 +1,110 @@
-const connection = require('./db');
+const { connection, validateParam, wrapAsync } = require('./db');
 
+/**
+ * @swagger
+ * /hosts:
+ *   get:
+ *     summary: Get paginated host information
+ *     description: Returns a paginated list of Airbnb hosts with their details
+ *     tags:
+ *       - Hosts
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: page_size
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page (default is 10, max 100)
+ *     responses:
+ *       200:
+ *         description: A list of hosts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   host_id:
+ *                     type: integer
+ *                     description: Unique identifier of the host
+ *                   host_name:
+ *                     type: string
+ *                     description: Name of the host
+ *                   response_time:
+ *                     type: string
+ *                     description: Typical response time of the host
+ *                   response_rate:
+ *                     type: number
+ *                     format: float
+ *                     description: Host response rate percentage
+ *                   acceptance_rate:
+ *                     type: number
+ *                     format: float
+ *                     description: Host acceptance rate percentage
+ *                   is_superhost:
+ *                     type: boolean
+ *                     description: Whether the host is a superhost
+ *                   total_listings_count:
+ *                     type: number
+ *                     format: float
+ *                     description: Total number of listings this host has
+ *                   identity_verified:
+ *                     type: boolean
+ *                     description: Whether the host's identity is verified
+ *                   listings_count_entire_homes:
+ *                     type: integer
+ *                     description: Number of entire home/apt listings
+ *                   listings_count_private_rooms:
+ *                     type: integer
+ *                     description: Number of private room listings
+ *                   listings_count_shared_rooms:
+ *                     type: integer
+ *                     description: Number of shared room listings
+ *                   years_experience:
+ *                     type: number
+ *                     format: float
+ *                     description: Years of experience as a host
+ *       400:
+ *         description: Invalid pagination parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Route: GET /hosts
-const getHosts = async function (req, res) {
+const getHosts = wrapAsync(async function (req, res) {
+  // Validate pagination parameters
+  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
+  if (req.query.page && !pageValidation.isValid) {
+    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
+  }
+
+  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
+  if (req.query.page_size && !pageSizeValidation.isValid) {
+    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
+  }
+
   const page = req.query.page ? parseInt(req.query.page) : 1;
   const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
   const offset = (page - 1) * pageSize;
@@ -12,25 +115,67 @@ const getHosts = async function (req, res) {
     SELECT *
     FROM host
     ORDER BY id
-    LIMIT ${pageSize}
-    OFFSET ${offset}
+    LIMIT ?
+    OFFSET ?
   `,
+    [pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json([]);
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
+/**
+ * @swagger
+ * /hosts/experienced:
+ *   get:
+ *     summary: Get experienced hosts
+ *     description: Shows the hosts with the longest presence on the platform within the dataset
+ *     tags:
+ *       - Hosts
+ *     responses:
+ *       200:
+ *         description: List of experienced hosts sorted by years of experience
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   host_id:
+ *                     type: integer
+ *                     description: Unique identifier of the host
+ *                   host_name:
+ *                     type: string
+ *                     description: Name of the host
+ *                   experience:
+ *                     type: integer
+ *                     description: Years of experience as a host (rounded)
+ *                   total_listings_count:
+ *                     type: number
+ *                     format: float
+ *                     description: Total number of listings this host has
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Query 2
 // Route: GET /hosts/experienced
 // Shows the hosts with the longest presence on the platform within the dataset.
-// Could correlate with reliability or listing quality.
-const getExperiencedHosts = async function (req, res) {
+const getExperiencedHosts = wrapAsync(async function (req, res) {
   connection.query(
     `
     SELECT
@@ -47,19 +192,71 @@ const getExperiencedHosts = async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
+/**
+ * @swagger
+ * /hosts/types:
+ *   get:
+ *     summary: Compare metrics between Superhosts and non-Superhosts
+ *     description: Compares key performance metrics between listings managed by Superhosts and non-Superhosts within each neighborhood
+ *     tags:
+ *       - Hosts
+ *       - Analytics
+ *     responses:
+ *       200:
+ *         description: Comparison of metrics between Superhosts and non-Superhosts by neighborhood
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   neighbourhood_cleansed:
+ *                     type: string
+ *                     description: Neighborhood name
+ *                   host_type:
+ *                     type: string
+ *                     enum: [Superhost, Non-Superhost]
+ *                     description: Type of host
+ *                   avg_rating:
+ *                     type: number
+ *                     format: float
+ *                     description: Average rating for this host type in the neighborhood
+ *                   avg_reviews_per_month:
+ *                     type: number
+ *                     format: float
+ *                     description: Average reviews per month for this host type
+ *                   avg_price:
+ *                     type: number
+ *                     format: float
+ *                     description: Average price for listings of this host type
+ *                   num_listings:
+ *                     type: integer
+ *                     description: Number of listings for this host type in the neighborhood
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Query 4
 // Route: GET /hosts/types
 // Compares key performance metrics between listings managed by Superhosts and
-// non-Superhosts within each neighborhood that has both types of hosts.
-const getHostTypes = async function (req, res) {
+// non-Superhosts within each neighborhood.
+const getHostTypes = wrapAsync(async function (req, res) {
   connection.query(
     `
 WITH NeighbourhoodHostStats AS (
@@ -113,23 +310,114 @@ ORDER BY
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
+/**
+ * @swagger
+ * /hosts/interactions:
+ *   get:
+ *     summary: Compare metrics based on host interaction quality
+ *     description: Compares listings with hosts known for good interaction versus other hosts by neighborhood and bedroom count
+ *     tags:
+ *       - Hosts
+ *       - Analytics
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: page_size
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page (default is 10, max 100)
+ *     responses:
+ *       200:
+ *         description: Comparison of metrics between hosts with good interaction and others
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   neighbourhood_cleansed:
+ *                     type: string
+ *                     description: Neighborhood name
+ *                   bedrooms:
+ *                     type: number
+ *                     format: float
+ *                     description: Number of bedrooms
+ *                   avg_rating_good_interaction_hosts:
+ *                     type: number
+ *                     format: float
+ *                     description: Average rating for hosts with good interaction
+ *                   avg_price_good_interaction_hosts:
+ *                     type: number
+ *                     format: float
+ *                     description: Average price for listings with hosts with good interaction
+ *                   count_listings_good_interaction_hosts:
+ *                     type: integer
+ *                     description: Count of listings with hosts with good interaction
+ *                   avg_rating_other_hosts:
+ *                     type: number
+ *                     format: float
+ *                     description: Average rating for other hosts
+ *                   avg_price_other_hosts:
+ *                     type: number
+ *                     format: float
+ *                     description: Average price for listings with other hosts
+ *                   count_listings_other_hosts:
+ *                     type: integer
+ *                     description: Count of listings with other hosts
+ *       400:
+ *         description: Invalid pagination parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Query 5
 // Route: GET /hosts/interactions
-// Identify listings from hosts who frequently receive positive comments mentioning
-// specific interaction keywords (like 'communication', 'responsive', 'check-in', 'helpful') and
-// compare their average rating and price against the neighborhood average for the same number of bedrooms.
-const getHostInteractions = async function (req, res) {
+const getHostInteractions = wrapAsync(async function (req, res) {
+  // Validate pagination parameters
+  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
+  if (req.query.page && !pageValidation.isValid) {
+    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
+  }
+
+  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
+  if (req.query.page_size && !pageSizeValidation.isValid) {
+    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
+  }
+
   const page = req.query.page ? parseInt(req.query.page) : 1;
   const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
   const offset = (page - 1) * pageSize;
+  
   connection.query(
     `
 WITH HostsWithGoodInteraction AS (
@@ -178,25 +466,87 @@ HAVING
 ORDER BY
     l.neighbourhood_cleansed,
     l.bedrooms
-LIMIT ${pageSize}
-OFFSET ${offset};
+LIMIT ?
+OFFSET ?;
   `,
+    [pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
+/**
+ * @swagger
+ * /hosts/verified:
+ *   get:
+ *     summary: Get hosts' identity verification stats
+ *     description: Shows statistics about hosts' identity verification status
+ *     tags:
+ *       - Hosts
+ *       - Analytics
+ *     parameters:
+ *       - in: query
+ *         name: only_verified
+ *         schema:
+ *           type: boolean
+ *         description: If true, only show stats for verified hosts (default is false)
+ *     responses:
+ *       200:
+ *         description: Statistics about hosts' identity verification
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   identity_verified:
+ *                     type: boolean
+ *                     description: Whether the identity is verified
+ *                   number_of_hosts:
+ *                     type: integer
+ *                     description: Number of hosts with this verification status
+ *                   percentage_of_total:
+ *                     type: number
+ *                     format: float
+ *                     description: Percentage of total hosts with this verification status
+ *       400:
+ *         description: Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Query 6
 // Route: GET /hosts/verified
-// Shows the number and percentage of hosts based on whether their identity is verified.
-const getHostVerified = async function (req, res) {
-  const only_verfied = req.query.only_verified ?? false;
+const getHostVerified = wrapAsync(async function (req, res) {
+  // Validate only_verified parameter
+  const onlyVerifiedValidation = validateParam(req.query.only_verified, 'boolean');
+  if (req.query.only_verified && !onlyVerifiedValidation.isValid) {
+    return res.status(400).json({ error: `Only verified parameter invalid: ${onlyVerifiedValidation.message}` });
+  }
+
+  const only_verified = req.query.only_verified === 'true' || req.query.only_verified === '1';
+  
   connection.query(
     `
 SELECT
@@ -207,28 +557,141 @@ FROM
     host
 GROUP BY
     identity_verified
-${only_verfied ? `HAVING identity_verified = 't'` : ""}
+${only_verified ? `HAVING identity_verified = 't'` : ""}
 ORDER BY
     number_of_hosts DESC;
 `,
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
+/**
+ * @swagger
+ * /analytics/high-performers:
+ *   get:
+ *     summary: Get high-performing hosts
+ *     description: Returns hosts with a minimum number of listings and high ratings
+ *     tags:
+ *       - Hosts
+ *       - Analytics
+ *     parameters:
+ *       - in: query
+ *         name: min_listings
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *         description: Minimum number of listings a host must have (default is 3)
+ *       - in: query
+ *         name: min_rating
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 5
+ *         description: Minimum rating a host's listings must have (default is 4.7)
+ *       - in: query
+ *         name: order_by
+ *         schema:
+ *           type: string
+ *           enum: [host_name, total_listings_count, average_value_score_across_listings, min_listing_rating]
+ *         description: Field to order the results by
+ *     responses:
+ *       200:
+ *         description: List of high-performing hosts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   host_id:
+ *                     type: integer
+ *                     description: Unique identifier of the host
+ *                   host_name:
+ *                     type: string
+ *                     description: Name of the host
+ *                   total_listings_count:
+ *                     type: number
+ *                     format: float
+ *                     description: Total number of listings this host has
+ *                   average_value_score_across_listings:
+ *                     type: number
+ *                     format: float
+ *                     description: Average value score across all listings for this host
+ *                   min_listing_rating:
+ *                     type: number
+ *                     format: float
+ *                     description: Minimum rating among all listings for this host
+ *       400:
+ *         description: Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Query 10
 // Route: GET /analytics/high-performers
-// Finds hosts who consistently deliver high-quality experiences across their entire portfolio
-const getHighPerformerHosts = async function (req, res) {
-  const min_listings = req.query.min_listings ?? 3;
-  const min_rating = req.query.min_rating ?? 4.7;
+const getHighPerformerHosts = wrapAsync(async function (req, res) {
+  // Validate parameters
+  const minListingsValidation = validateParam(req.query.min_listings, 'number', { min: 1 });
+  if (req.query.min_listings && !minListingsValidation.isValid) {
+    return res.status(400).json({ error: `Minimum listings parameter invalid: ${minListingsValidation.message}` });
+  }
+
+  const minRatingValidation = validateParam(req.query.min_rating, 'number', { min: 1, max: 5 });
+  if (req.query.min_rating && !minRatingValidation.isValid) {
+    return res.status(400).json({ error: `Minimum rating parameter invalid: ${minRatingValidation.message}` });
+  }
+
+  // Validate order_by parameter
+  const validOrderByValues = ['host_name', 'total_listings_count', 'average_value_score_across_listings', 'min_listing_rating'];
+  if (req.query.order_by && !validOrderByValues.includes(req.query.order_by)) {
+    return res.status(400).json({ 
+      error: `Order by parameter invalid: must be one of ${validOrderByValues.join(', ')}` 
+    });
+  }
+
+  const min_listings = req.query.min_listings ? parseFloat(req.query.min_listings) : 3;
+  const min_rating = req.query.min_rating ? parseFloat(req.query.min_rating) : 4.7;
   const order_by = req.query.order_by;
+
+  let orderClause;
+  switch (order_by) {
+    case "host_name":
+      orderClause = "ORDER BY h.host_name";
+      break;
+    case "total_listings_count":
+      orderClause = "ORDER BY h.total_listings_count DESC";
+      break;
+    case "average_value_score_across_listings":
+      orderClause = "ORDER BY average_value_score_across_listings DESC";
+      break;
+    case "min_listing_rating":
+      orderClause = "ORDER BY min_listing_rating DESC";
+      break;
+    default:
+      orderClause = "ORDER BY h.host_id";
+  }
 
   connection.query(
     `
@@ -263,34 +726,22 @@ FROM
         JOIN
     HostAvgValue hav ON h.host_id = hav.host_id
 WHERE
-    h.total_listings_count > ${min_listings}
-  AND hmr.min_listing_rating > ${min_rating}
-  AND hav.avg_value_score > ${min_rating}
-${(() => {
-  switch (order_by) {
-    case "host_name":
-      return "ORDER BY h.host_name";
-    case "total_listings_count":
-      return "ORDER BY h.total_listings_count DESC";
-    case "average_value_score_across_listings":
-      return "ORDER BY average_value_score_across_listings DESC";
-    case "min_listing_rating":
-      return "ORDER BY min_listing_rating DESC";
-    default:
-      return "ORDER BY h.host_id";
-  }
-})()};
+    h.total_listings_count > ?
+  AND hmr.min_listing_rating > ?
+  AND hav.avg_value_score > ?
+${orderClause};
 `,
+    [min_listings, min_rating, min_rating],
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
 module.exports = {
   getHosts,

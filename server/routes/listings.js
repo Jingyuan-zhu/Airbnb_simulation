@@ -1,7 +1,89 @@
-const connection = require('./db');
+const { connection, validateParam, wrapAsync } = require("./db");
 
+/**
+ * @swagger
+ * /listings:
+ *   get:
+ *     summary: Get paginated listings
+ *     description: Returns a paginated list of Airbnb listings with basic information
+ *     tags:
+ *       - Listings
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: page_size
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page (default is 10, max 100)
+ *     responses:
+ *       200:
+ *         description: A list of Airbnb listings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: Unique identifier of the listing
+ *                   name:
+ *                     type: string
+ *                     description: Name of the listing
+ *                   neighbourhood:
+ *                     type: string
+ *                     description: Neighbourhood where the listing is located
+ *                   room_type:
+ *                     type: string
+ *                     description: Type of room (e.g., Entire home/apt, Private room)
+ *                   price:
+ *                     type: number
+ *                     format: float
+ *                     description: Price per night
+ *                   number_of_reviews:
+ *                     type: integer
+ *                     description: Number of reviews for the listing
+ *       400:
+ *         description: Invalid pagination parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Route: GET /listings
-const getListings = async function (req, res) {
+const getListings = wrapAsync(async function (req, res) {
+  // Validate pagination parameters
+  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
+  if (req.query.page && !pageValidation.isValid) {
+    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
+  }
+
+  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
+  if (req.query.page_size && !pageSizeValidation.isValid) {
+    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
+  }
+
   const page = req.query.page ? parseInt(req.query.page) : 1;
   const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
   const offset = (page - 1) * pageSize;
@@ -18,143 +100,568 @@ const getListings = async function (req, res) {
       number_of_reviews
     FROM listings
     ORDER BY id
-    LIMIT ${pageSize}
-    OFFSET ${offset}
+    LIMIT ?
+    OFFSET ?
   `,
+    [pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json([]);
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
-// Route: GET /listing/:listing_id
-const getListing = async function (req, res) {
-  const listing_id = req.params.listing_id;
+/**
+ * @swagger
+ * /listings/{listing_id}:
+ *   get:
+ *     summary: Get a specific listing by ID
+ *     description: Returns detailed information about a specific Airbnb listing
+ *     tags:
+ *       - Listings
+ *     parameters:
+ *       - in: path
+ *         name: listing_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Unique identifier of the listing
+ *     responses:
+ *       200:
+ *         description: Detailed information about a listing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 host_id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *                 picture_url:
+ *                   type: string
+ *                 neighbourhood_cleansed:
+ *                   type: string
+ *                 latitude:
+ *                   type: number
+ *                   format: float
+ *                 longitude:
+ *                   type: number
+ *                   format: float
+ *                 accommodates:
+ *                   type: integer
+ *                 bathrooms:
+ *                   type: number
+ *                   format: float
+ *                 bedrooms:
+ *                   type: number
+ *                   format: float
+ *                 beds:
+ *                   type: number
+ *                   format: float
+ *                 price:
+ *                   type: number
+ *                   format: float
+ *                 room_type_simple:
+ *                   type: string
+ *       400:
+ *         description: Invalid listing ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       404:
+ *         description: Listing not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Listing not found
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
+// Route: GET /listings/:listing_id
+const getListing = wrapAsync(async function (req, res) {
+  const listingIdValidation = validateParam(req.params.listing_id, 'number', { required: true, min: 1 });
+  if (!listingIdValidation.isValid) {
+    return res.status(400).json({ error: `Listing ID invalid: ${listingIdValidation.message}` });
+  }
 
-  // Get detailed information about a specific listing
+  const listing_id = parseInt(req.params.listing_id);
+
+  // Get detailed information about a specific listing using parameterized query
   connection.query(
     `
     SELECT *
     FROM listings
-    WHERE id = '${listing_id}'
+    WHERE id = ?
   `,
+    [listing_id],
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json({});
+        return res.status(500).json({ error: "Database error. Please try again later." });
+      } else if (!data.rows || data.rows.length === 0) {
+        return res.status(404).json({ error: "Listing not found" });
       } else {
         res.json(data.rows[0]);
       }
     }
   );
-};
+});
 
+/**
+ * @swagger
+ * /listings/search:
+ *   get:
+ *     summary: Search for listings with filters
+ *     description: Returns listings matching the specified filters with pagination
+ *     tags:
+ *       - Listings
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: page_size
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page (default is 10, max 100)
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Filter by listing name (case-insensitive)
+ *       - in: query
+ *         name: description
+ *         schema:
+ *           type: string
+ *         description: Filter by listing description (case-insensitive)
+ *       - in: query
+ *         name: picture_url
+ *         schema:
+ *           type: string
+ *         description: Filter by picture URL (case-insensitive)
+ *       - in: query
+ *         name: neighbourhood_cleansed
+ *         schema:
+ *           type: string
+ *         description: Filter by neighbourhood name (case-insensitive)
+ *       - in: query
+ *         name: room_type_simple
+ *         schema:
+ *           type: string
+ *         description: Filter by room type (case-insensitive)
+ *       - in: query
+ *         name: latitude_low
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum latitude
+ *       - in: query
+ *         name: latitude_high
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum latitude
+ *       - in: query
+ *         name: longitude_low
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum longitude
+ *       - in: query
+ *         name: longitude_high
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum longitude
+ *       - in: query
+ *         name: accommodates_low
+ *         schema:
+ *           type: number
+ *           format: integer
+ *         description: Minimum accommodates count
+ *       - in: query
+ *         name: accommodates_high
+ *         schema:
+ *           type: number
+ *           format: integer
+ *         description: Maximum accommodates count
+ *       - in: query
+ *         name: bathrooms_low
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum bathrooms
+ *       - in: query
+ *         name: bathrooms_high
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum bathrooms
+ *       - in: query
+ *         name: bedrooms_low
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum bedrooms
+ *       - in: query
+ *         name: bedrooms_high
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum bedrooms
+ *       - in: query
+ *         name: beds_low
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum beds
+ *       - in: query
+ *         name: beds_high
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum beds
+ *       - in: query
+ *         name: price_low
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum price
+ *       - in: query
+ *         name: price_high
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum price
+ *       - in: query
+ *         name: host_id_low
+ *         schema:
+ *           type: integer
+ *         description: Minimum host ID
+ *       - in: query
+ *         name: host_id_high
+ *         schema:
+ *           type: integer
+ *         description: Maximum host ID
+ *       - in: query
+ *         name: id_low
+ *         schema:
+ *           type: integer
+ *         description: Minimum listing ID
+ *       - in: query
+ *         name: id_high
+ *         schema:
+ *           type: integer
+ *         description: Maximum listing ID
+ *     responses:
+ *       200:
+ *         description: A list of listings matching the specified filters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   host_id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   picture_url:
+ *                     type: string
+ *                   neighbourhood_cleansed:
+ *                     type: string
+ *                   latitude:
+ *                     type: number
+ *                     format: float
+ *                   longitude:
+ *                     type: number
+ *                     format: float
+ *                   accommodates:
+ *                     type: integer
+ *                   bathrooms:
+ *                     type: number
+ *                     format: float
+ *                   bedrooms:
+ *                     type: number
+ *                     format: float
+ *                   beds:
+ *                     type: number
+ *                     format: float
+ *                   price:
+ *                     type: number
+ *                     format: float
+ *                   room_type_simple:
+ *                     type: string
+ *       400:
+ *         description: Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Route: GET /search_listings
-const searchListings = async function (req, res) {
+const searchListings = wrapAsync(async function (req, res) {
+  // Validate pagination parameters
+  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
+  if (req.query.page && !pageValidation.isValid) {
+    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
+  }
+
+  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
+  if (req.query.page_size && !pageSizeValidation.isValid) {
+    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
+  }
+
+  // Validate range parameters
+  const rangeParams = [
+    'latitude_low', 'latitude_high', 'longitude_low', 'longitude_high',
+    'accommodates_low', 'accommodates_high', 'bathrooms_low', 'bathrooms_high',
+    'bedrooms_low', 'bedrooms_high', 'beds_low', 'beds_high',
+    'price_low', 'price_high', 'host_id_low', 'host_id_high',
+    'id_low', 'id_high'
+  ];
+
+  for (const param of rangeParams) {
+    if (req.query[param]) {
+      const validation = validateParam(req.query[param], 'number');
+      if (!validation.isValid) {
+        return res.status(400).json({ error: `Parameter ${param} invalid: ${validation.message}` });
+      }
+    }
+  }
+
+  // Extract pagination parameters
   const page = req.query.page ? parseInt(req.query.page) : 1;
   const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
   const offset = (page - 1) * pageSize;
 
-  const name = req.query.name ?? "";
-  const neighbourhood = req.query.neighbourhood_cleansed ?? "";
-  const roomType = req.query.room_type_simple ?? "";
-  const description = req.query.description ?? "";
-  const pictureUrl = req.query.picture_url ?? "";
-  const latitudeLow = req.query.latitude_low ?? -90;
-  const latitudeHigh = req.query.latitude_high ?? 90;
-  const longitudeLow = req.query.longitude_low ?? -180;
-  const longitudeHigh = req.query.longitude_high ?? 180;
-  const accommodatesLow = req.query.accommodates_low ?? 1;
-  const accommodatesHigh = req.query.accommodates_high ?? 100;
-  const bathroomsLow = req.query.bathrooms_low ?? 0;
-  const bathroomsHigh = req.query.bathrooms_high ?? 50;
-  const bedroomsLow = req.query.bedrooms_low ?? 0;
-  const bedroomsHigh = req.query.bedrooms_high ?? 50;
-  const bedsLow = req.query.beds_low ?? 0;
-  const bedsHigh = req.query.beds_high ?? 100;
-  const priceLow = req.query.price_low ?? 0;
-  const priceHigh = req.query.price_high ?? 100000;
-  const hostIdLow = req.query.host_id_low ?? 0;
-  const hostIdHigh = req.query.host_id_high ?? 999999999999;
-  const idLow = req.query.id_low ?? 0;
-  const idHigh = req.query.id_high ?? 999999999999;
+  // Build dynamic WHERE clause and parameters
+  let whereClause = [];
+  let params = [];
+
+  // Text search filters
+  const textFilters = {
+    name: req.query.name,
+    description: req.query.description,
+    picture_url: req.query.picture_url,
+    neighbourhood_cleansed: req.query.neighbourhood_cleansed,
+    room_type_simple: req.query.room_type_simple,
+  };
+
+  // Add text filters (ILIKE) if provided
+  for (const [field, value] of Object.entries(textFilters)) {
+    if (value) {
+      whereClause.push(`${field} ILIKE ?`);
+      params.push(`%${value}%`);
+    }
+  }
+
+  // Range filters
+  const rangeFilters = {
+    latitude: [req.query.latitude_low, req.query.latitude_high],
+    longitude: [req.query.longitude_low, req.query.longitude_high],
+    accommodates: [req.query.accommodates_low, req.query.accommodates_high],
+    bathrooms: [req.query.bathrooms_low, req.query.bathrooms_high],
+    bedrooms: [req.query.bedrooms_low, req.query.bedrooms_high],
+    beds: [req.query.beds_low, req.query.beds_high],
+    price: [req.query.price_low, req.query.price_high],
+    host_id: [req.query.host_id_low, req.query.host_id_high],
+    id: [req.query.id_low, req.query.id_high],
+  };
+
+  // Add range filters if exists
+  for (const [field, [min, max]] of Object.entries(rangeFilters)) {
+    if (min) {
+      whereClause.push(`${field} >= ?`);
+      params.push(min);
+    }
+
+    if (max) {
+      whereClause.push(`${field} <= ?`);
+      params.push(max);
+    }
+  }
+
+  // Build the final query
+  const whereString =
+    whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
 
   const query = `
     SELECT *
     FROM listings
-    WHERE 
-      name ILIKE $1
-      AND description ILIKE $2
-      AND picture_url ILIKE $3
-      AND neighbourhood_cleansed ILIKE $4
-      AND room_type_simple ILIKE $5
-      AND latitude >= $6
-      AND latitude <= $7
-      AND longitude >= $8
-      AND longitude <= $9
-      AND accommodates >= $10
-      AND accommodates <= $11
-      AND bathrooms >= $12
-      AND bathrooms <= $13
-      AND bedrooms >= $14
-      AND bedrooms <= $15
-      AND beds >= $16
-      AND beds <= $17
-      AND price >= $18
-      AND price <= $19
-      AND host_id >= $20
-      AND host_id <= $21
-      AND id >= $22
-      AND id <= $23
+    ${whereString}
     ORDER BY name ASC
-    LIMIT ${pageSize}
-    OFFSET ${offset}
+    LIMIT ?
+    OFFSET ?
   `;
 
-  const params = [
-    `%${name}%`,
-    `%${description}%`,
-    `%${pictureUrl}%`,
-    `%${neighbourhood}%`,
-    `%${roomType}%`,
-    latitudeLow,
-    latitudeHigh,
-    longitudeLow,
-    longitudeHigh,
-    accommodatesLow,
-    accommodatesHigh,
-    bathroomsLow,
-    bathroomsHigh,
-    bedroomsLow,
-    bedroomsHigh,
-    bedsLow,
-    bedsHigh,
-    priceLow,
-    priceHigh,
-    hostIdLow,
-    hostIdHigh,
-    idLow,
-    idHigh,
-  ];
+  // Add pagination parameters
+  params.push(pageSize, offset);
 
+  // Execute main query
   connection.query(query, params, (err, data) => {
     if (err) {
-      console.log(err);
-      res.json([]);
-    } else {
-      res.json(data.rows);
+      console.error("Error searching listings:", err);
+      return res.status(500).json({ error: "Database error. Please try again later." });
     }
-  });
-};
 
+    // Return results with pagination metadata
+    res.json(data.rows || []);
+  });
+});
+
+/**
+ * @swagger
+ * /listings/{listing_id}/reviews:
+ *   get:
+ *     summary: Get reviews for a specific listing
+ *     description: Returns paginated reviews for a specific Airbnb listing
+ *     tags:
+ *       - Listings
+ *       - Reviews
+ *     parameters:
+ *       - in: path
+ *         name: listing_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Unique identifier of the listing
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: page_size
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page (default is 10, max 100)
+ *     responses:
+ *       200:
+ *         description: A list of reviews for the specified listing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: Unique identifier of the review
+ *                   listing_id:
+ *                     type: integer
+ *                     description: ID of the listing this review belongs to
+ *                   date:
+ *                     type: string
+ *                     format: date
+ *                     description: Date the review was posted
+ *                   reviewer_id:
+ *                     type: integer
+ *                     description: ID of the reviewer
+ *                   reviewer_name:
+ *                     type: string
+ *                     description: Name of the reviewer
+ *                   comments:
+ *                     type: string
+ *                     description: Review text
+ *                   sentiment:
+ *                     type: string
+ *                     enum: [Positive, Neutral, Negative]
+ *                     description: Sentiment analysis of the review
+ *       400:
+ *         description: Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Database error. Please try again later.
+ */
 // Route: GET /reviews/:listing_id
-const getReviews = async function (req, res) {
-  const listing_id = req.params.listing_id;
+const getReviews = wrapAsync(async function (req, res) {
+  // Validate listing_id parameter
+  const listingIdValidation = validateParam(req.params.listing_id, 'number', { required: true, min: 1 });
+  if (!listingIdValidation.isValid) {
+    return res.status(400).json({ error: `Listing ID invalid: ${listingIdValidation.message}` });
+  }
+
+  // Validate pagination parameters
+  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
+  if (req.query.page && !pageValidation.isValid) {
+    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
+  }
+
+  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
+  if (req.query.page_size && !pageSizeValidation.isValid) {
+    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
+  }
+
+  const listing_id = parseInt(req.params.listing_id);
   const page = req.query.page ? parseInt(req.query.page) : 1;
   const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
   const offset = (page - 1) * pageSize;
@@ -165,25 +672,26 @@ const getReviews = async function (req, res) {
     SELECT r.*
     FROM reviews r
     JOIN review_info ri ON r.id = ri.id
-    WHERE ri.listing_id = '${listing_id}'
+    WHERE ri.listing_id = ?
     ORDER BY r.date DESC
-    LIMIT ${pageSize}
-    OFFSET ${offset}
+    LIMIT ?
+    OFFSET ?
   `,
+    [listing_id, pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
-        res.json([]);
+        return res.status(500).json({ error: "Database error. Please try again later." });
       } else {
-        res.json(data.rows);
+        res.json(data.rows || []);
       }
     }
   );
-};
+});
 
 module.exports = {
   getListings,
   getListing,
   searchListings,
-  getReviews
+  getReviews,
 };
