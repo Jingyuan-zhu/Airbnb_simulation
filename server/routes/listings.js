@@ -1,4 +1,4 @@
-const { connection, validateParam, wrapAsync } = require("./db");
+const { connection, validateParam, validatePagination, wrapAsync } = require("./db");
 
 /**
  * @swagger
@@ -74,19 +74,10 @@ const { connection, validateParam, wrapAsync } = require("./db");
 // Route: GET /listings
 const getListings = wrapAsync(async function (req, res) {
   // Validate pagination parameters
-  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
-  if (req.query.page && !pageValidation.isValid) {
-    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
-  }
+  const pagination = validatePagination(req.query, res);
+  if (!pagination) return; // Validation failed, response already sent
 
-  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
-  if (req.query.page_size && !pageSizeValidation.isValid) {
-    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
-  }
-
-  const page = req.query.page ? parseInt(req.query.page) : 1;
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-  const offset = (page - 1) * pageSize;
+  const { page, pageSize, offset } = pagination;
 
   // Get paginated listings
   connection.query(
@@ -100,8 +91,8 @@ const getListings = wrapAsync(async function (req, res) {
       number_of_reviews
     FROM listings
     ORDER BY id
-    LIMIT ?
-    OFFSET ?
+    LIMIT $1
+    OFFSET $2
   `,
     [pageSize, offset],
     (err, data) => {
@@ -217,7 +208,7 @@ const getListing = wrapAsync(async function (req, res) {
     `
     SELECT *
     FROM listings
-    WHERE id = ?
+    WHERE id = $1
   `,
     [listing_id],
     (err, data) => {
@@ -364,26 +355,6 @@ const getListing = wrapAsync(async function (req, res) {
  *           type: number
  *           format: float
  *         description: Maximum price
- *       - in: query
- *         name: host_id_low
- *         schema:
- *           type: integer
- *         description: Minimum host ID
- *       - in: query
- *         name: host_id_high
- *         schema:
- *           type: integer
- *         description: Maximum host ID
- *       - in: query
- *         name: id_low
- *         schema:
- *           type: integer
- *         description: Minimum listing ID
- *       - in: query
- *         name: id_high
- *         schema:
- *           type: integer
- *         description: Maximum listing ID
  *     responses:
  *       200:
  *         description: A list of listings matching the specified filters
@@ -451,23 +422,15 @@ const getListing = wrapAsync(async function (req, res) {
 // Route: GET /search_listings
 const searchListings = wrapAsync(async function (req, res) {
   // Validate pagination parameters
-  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
-  if (req.query.page && !pageValidation.isValid) {
-    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
-  }
-
-  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
-  if (req.query.page_size && !pageSizeValidation.isValid) {
-    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
-  }
+  const pagination = validatePagination(req.query, res);
+  if (!pagination) return; // Validation failed, response already sent
 
   // Validate range parameters
   const rangeParams = [
     'latitude_low', 'latitude_high', 'longitude_low', 'longitude_high',
     'accommodates_low', 'accommodates_high', 'bathrooms_low', 'bathrooms_high',
     'bedrooms_low', 'bedrooms_high', 'beds_low', 'beds_high',
-    'price_low', 'price_high', 'host_id_low', 'host_id_high',
-    'id_low', 'id_high'
+    'price_low', 'price_high',
   ];
 
   for (const param of rangeParams) {
@@ -480,9 +443,7 @@ const searchListings = wrapAsync(async function (req, res) {
   }
 
   // Extract pagination parameters
-  const page = req.query.page ? parseInt(req.query.page) : 1;
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-  const offset = (page - 1) * pageSize;
+  const { page, pageSize, offset } = pagination;
 
   // Build dynamic WHERE clause and parameters
   let whereClause = [];
@@ -500,7 +461,7 @@ const searchListings = wrapAsync(async function (req, res) {
   // Add text filters (ILIKE) if provided
   for (const [field, value] of Object.entries(textFilters)) {
     if (value) {
-      whereClause.push(`${field} ILIKE ?`);
+      whereClause.push(`${field} ILIKE $${params.length + 1}`);
       params.push(`%${value}%`);
     }
   }
@@ -521,12 +482,12 @@ const searchListings = wrapAsync(async function (req, res) {
   // Add range filters if exists
   for (const [field, [min, max]] of Object.entries(rangeFilters)) {
     if (min) {
-      whereClause.push(`${field} >= ?`);
+      whereClause.push(`${field} >= $${params.length + 1}`);
       params.push(min);
     }
 
     if (max) {
-      whereClause.push(`${field} <= ?`);
+      whereClause.push(`${field} <= $${params.length + 1}`);
       params.push(max);
     }
   }
@@ -540,8 +501,8 @@ const searchListings = wrapAsync(async function (req, res) {
     FROM listings
     ${whereString}
     ORDER BY name ASC
-    LIMIT ?
-    OFFSET ?
+    LIMIT $${params.length + 1}
+    OFFSET $${params.length + 2}
   `;
 
   // Add pagination parameters
@@ -651,20 +612,11 @@ const getReviews = wrapAsync(async function (req, res) {
   }
 
   // Validate pagination parameters
-  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
-  if (req.query.page && !pageValidation.isValid) {
-    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
-  }
-
-  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
-  if (req.query.page_size && !pageSizeValidation.isValid) {
-    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
-  }
+  const pagination = validatePagination(req.query, res);
+  if (!pagination) return; // Validation failed, response already sent
 
   const listing_id = parseInt(req.params.listing_id);
-  const page = req.query.page ? parseInt(req.query.page) : 1;
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-  const offset = (page - 1) * pageSize;
+  const { page, pageSize, offset } = pagination;
 
   // Get reviews for a specific listing
   connection.query(
@@ -672,10 +624,10 @@ const getReviews = wrapAsync(async function (req, res) {
     SELECT r.*
     FROM reviews r
     JOIN review_info ri ON r.id = ri.id
-    WHERE ri.listing_id = ?
+    WHERE ri.listing_id = $1
     ORDER BY r.date DESC
-    LIMIT ?
-    OFFSET ?
+    LIMIT $2
+    OFFSET $3
   `,
     [listing_id, pageSize, offset],
     (err, data) => {

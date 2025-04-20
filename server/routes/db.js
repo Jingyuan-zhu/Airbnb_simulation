@@ -82,6 +82,35 @@ const validateParam = (param, type, options = {}) => {
 };
 
 /**
+ * Validates and parses pagination parameters (page and page_size)
+ * @param {object} query - The request query object containing pagination parameters
+ * @param {object} res - Express response object for returning errors
+ * @returns {object|false} - Object with page, pageSize and offset if valid, false if invalid
+ */
+const validatePagination = (query, res) => {
+  // Validate page parameter
+  const pageValidation = validateParam(query.page, 'number', { min: 1 });
+  if (query.page && !pageValidation.isValid) {
+    res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
+    return false;
+  }
+
+  // Validate page_size parameter
+  const pageSizeValidation = validateParam(query.page_size, 'number', { min: 1, max: 100 });
+  if (query.page_size && !pageSizeValidation.isValid) {
+    res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
+    return false;
+  }
+
+  // Set default values and calculate offset
+  const page = query.page ? parseInt(query.page) : 1;
+  const pageSize = query.page_size ? parseInt(query.page_size) : 10;
+  const offset = (page - 1) * pageSize;
+
+  return { page, pageSize, offset };
+};
+
+/**
  * Express middleware for handling errors in routes
  * @param {Function} routeHandler - The route handler function
  * @returns {Function} - Middleware function that catches errors
@@ -100,5 +129,6 @@ const wrapAsync = (routeHandler) => {
 module.exports = {
   connection,
   validateParam,
+  validatePagination,
   wrapAsync
 };

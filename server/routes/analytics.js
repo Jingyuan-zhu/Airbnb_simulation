@@ -212,7 +212,7 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
     FROM listings l
              JOIN reviews r ON l.id = r.listing_id
     GROUP BY l.room_type_simple
-    ${room_type ? 'HAVING l.room_type_simple = ?' : ''}
+    ${room_type ? 'HAVING l.room_type_simple = $1' : ''}
     ORDER BY percent_positive_reviews DESC;
   `;
   
@@ -325,7 +325,7 @@ WHERE
     l.price IS NOT NULL
 GROUP BY
     review_month
-    HAVING review_month BETWEEN ? AND ?
+    HAVING review_month BETWEEN $1 AND $2
 ORDER BY
     review_month;
 `,
@@ -476,8 +476,8 @@ FROM
         JOIN
     NeighbourhoodReviewAvg nra ON l.neighbourhood_cleansed = nra.neighbourhood_cleansed
 WHERE
-    ri.scores_rating > ?
-  AND ri.scores_value > ?
+    ri.scores_rating > $1
+  AND ri.scores_value > $2
   AND ri.number_of_reviews IS NOT NULL
   AND l.price IS NOT NULL
   AND ri.number_of_reviews < nra.avg_reviews

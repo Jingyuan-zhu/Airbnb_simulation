@@ -1,4 +1,4 @@
-const { connection, validateParam, wrapAsync } = require('./db');
+const { connection, validateParam, validatePagination, wrapAsync } = require('./db');
 
 /**
  * @swagger
@@ -95,19 +95,10 @@ const { connection, validateParam, wrapAsync } = require('./db');
 // Route: GET /hosts
 const getHosts = wrapAsync(async function (req, res) {
   // Validate pagination parameters
-  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
-  if (req.query.page && !pageValidation.isValid) {
-    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
-  }
+  const pagination = validatePagination(req.query, res);
+  if (!pagination) return; // Validation failed, response already sent
 
-  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
-  if (req.query.page_size && !pageSizeValidation.isValid) {
-    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
-  }
-
-  const page = req.query.page ? parseInt(req.query.page) : 1;
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-  const offset = (page - 1) * pageSize;
+  const { page, pageSize, offset } = pagination;
 
   // Get paginated host information
   connection.query(
@@ -115,8 +106,8 @@ const getHosts = wrapAsync(async function (req, res) {
     SELECT *
     FROM host
     ORDER BY id
-    LIMIT ?
-    OFFSET ?
+    LIMIT $1
+    OFFSET $2
   `,
     [pageSize, offset],
     (err, data) => {
@@ -404,19 +395,10 @@ ORDER BY
 // Route: GET /hosts/interactions
 const getHostInteractions = wrapAsync(async function (req, res) {
   // Validate pagination parameters
-  const pageValidation = validateParam(req.query.page, 'number', { min: 1 });
-  if (req.query.page && !pageValidation.isValid) {
-    return res.status(400).json({ error: `Page parameter invalid: ${pageValidation.message}` });
-  }
+  const pagination = validatePagination(req.query, res);
+  if (!pagination) return; // Validation failed, response already sent
 
-  const pageSizeValidation = validateParam(req.query.page_size, 'number', { min: 1, max: 100 });
-  if (req.query.page_size && !pageSizeValidation.isValid) {
-    return res.status(400).json({ error: `Page size parameter invalid: ${pageSizeValidation.message}` });
-  }
-
-  const page = req.query.page ? parseInt(req.query.page) : 1;
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-  const offset = (page - 1) * pageSize;
+  const { page, pageSize, offset } = pagination;
   
   connection.query(
     `
@@ -466,8 +448,8 @@ HAVING
 ORDER BY
     l.neighbourhood_cleansed,
     l.bedrooms
-LIMIT ?
-OFFSET ?;
+LIMIT $1
+OFFSET $2;
   `,
     [pageSize, offset],
     (err, data) => {
@@ -726,9 +708,9 @@ FROM
         JOIN
     HostAvgValue hav ON h.host_id = hav.host_id
 WHERE
-    h.total_listings_count > ?
-  AND hmr.min_listing_rating > ?
-  AND hav.avg_value_score > ?
+    h.total_listings_count > $1
+  AND hmr.min_listing_rating > $2
+  AND hav.avg_value_score > $3
 ${orderClause};
 `,
     [min_listings, min_rating, min_rating],
