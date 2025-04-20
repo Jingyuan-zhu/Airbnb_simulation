@@ -1489,38 +1489,6 @@
               "format": "float"
             },
             "description": "Maximum price"
-          },
-          {
-            "in": "query",
-            "name": "host_id_low",
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Minimum host ID"
-          },
-          {
-            "in": "query",
-            "name": "host_id_high",
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Maximum host ID"
-          },
-          {
-            "in": "query",
-            "name": "id_low",
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Minimum listing ID"
-          },
-          {
-            "in": "query",
-            "name": "id_high",
-            "schema": {
-              "type": "integer"
-            },
-            "description": "Maximum listing ID"
           }
         ],
         "responses": {
