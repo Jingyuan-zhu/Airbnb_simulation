@@ -176,10 +176,6 @@ const search_listings = async function(req, res) {
   const bedsHigh = req.query.beds_high ?? 100;
   const priceLow = req.query.price_low ?? 0;
   const priceHigh = req.query.price_high ?? 100000;
-  const hostIdLow = req.query.host_id_low ?? 0;
-  const hostIdHigh = req.query.host_id_high ?? 999999999999;
-  const idLow = req.query.id_low ?? 0;
-  const idHigh = req.query.id_high ?? 999999999999;
 
   const query = `
     SELECT *
@@ -204,10 +200,6 @@ const search_listings = async function(req, res) {
       AND beds <= $17
       AND price >= $18
       AND price <= $19
-      AND host_id >= $20
-      AND host_id <= $21
-      AND id >= $22
-      AND id <= $23
     ORDER BY name ASC
     LIMIT ${pageSize}
     OFFSET ${offset}
@@ -232,11 +224,7 @@ const search_listings = async function(req, res) {
     bedsLow,
     bedsHigh,
     priceLow,
-    priceHigh,
-    hostIdLow,
-    hostIdHigh,
-    idLow,
-    idHigh
+    priceHigh
   ];
 
   connection.query(query, params, (err, data) => {
@@ -274,6 +262,7 @@ const overview = async function(req, res) {
 
 // Route 2: GET /experienced
 const experienced = async function(req, res) {
+  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
   connection.query(`
     SELECT
         host_id,
@@ -284,7 +273,7 @@ const experienced = async function(req, res) {
         host
     ORDER BY
         years_experience DESC
-    LIMIT 10;
+    LIMIT ${pageSize};
   `, (err, data) => {
     if (err) {
       console.log(err);
