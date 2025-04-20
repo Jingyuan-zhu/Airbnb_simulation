@@ -8,7 +8,7 @@ const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Airbnb Visualisation API",
+      title: "Airbnb Explorer API",
       description: "API for accessing and analyzing Airbnb listing data",
       version: "1.0.0",
     },

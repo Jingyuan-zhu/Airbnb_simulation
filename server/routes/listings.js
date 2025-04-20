@@ -298,14 +298,12 @@ const getListing = wrapAsync(async function (req, res) {
  *       - in: query
  *         name: accommodates_low
  *         schema:
- *           type: number
- *           format: integer
+ *           type: integer
  *         description: Minimum accommodates count
  *       - in: query
  *         name: accommodates_high
  *         schema:
- *           type: number
- *           format: integer
+ *           type: integer
  *         description: Maximum accommodates count
  *       - in: query
  *         name: bathrooms_low

@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Airbnb Visualisation API",
+    "title": "Airbnb Explorer API",
     "description": "API for accessing and analyzing Airbnb listing data",
     "version": "1.0.0"
   },
@@ -112,7 +112,13 @@
                     "properties": {
                       "room_type_simple": {
                         "type": "string",
-                        "description": "Type of room (e.g., Entire home/apt, Private room)"
+                        "description": "Type of room",
+                        "enum": [
+                          "entire",
+                          "private",
+                          "shared",
+                          "hotel"
+                        ]
                       },
                       "number_of_listings": {
                         "type": "integer",
@@ -177,7 +183,13 @@
                     "properties": {
                       "room_type": {
                         "type": "string",
-                        "description": "Type of room"
+                        "description": "Type of room",
+                        "enum": [
+                          "entire",
+                          "private",
+                          "shared",
+                          "hotel"
+                        ]
                       },
                       "percent_positive_reviews": {
                         "type": "number",
@@ -331,6 +343,7 @@
             "name": "min_rating",
             "schema": {
               "type": "number",
+              "format": "float",
               "minimum": 1,
               "maximum": 5
             },
@@ -644,8 +657,7 @@
                         "description": "Years of experience as a host (rounded)"
                       },
                       "total_listings_count": {
-                        "type": "number",
-                        "format": "float",
+                        "type": "integer",
                         "description": "Total number of listings this host has"
                       }
                     }
@@ -944,7 +956,7 @@
         }
       }
     },
-    "/analytics/high-performers": {
+    "/hosts/high-performers": {
       "get": {
         "summary": "Get high-performing hosts",
         "description": "Returns hosts with a minimum number of listings and high ratings",
@@ -957,7 +969,7 @@
             "in": "query",
             "name": "min_listings",
             "schema": {
-              "type": "number",
+              "type": "integer",
               "minimum": 1
             },
             "description": "Minimum number of listings a host must have (default is 3)"
@@ -967,6 +979,7 @@
             "name": "min_rating",
             "schema": {
               "type": "number",
+              "format": "float",
               "minimum": 1,
               "maximum": 5
             },
@@ -1006,8 +1019,7 @@
                         "description": "Name of the host"
                       },
                       "total_listings_count": {
-                        "type": "number",
-                        "format": "float",
+                        "type": "integer",
                         "description": "Total number of listings this host has"
                       },
                       "average_value_score_across_listings": {
@@ -1400,8 +1412,7 @@
             "in": "query",
             "name": "accommodates_low",
             "schema": {
-              "type": "number",
-              "format": "integer"
+              "type": "integer"
             },
             "description": "Minimum accommodates count"
           },
@@ -1409,8 +1420,7 @@
             "in": "query",
             "name": "accommodates_high",
             "schema": {
-              "type": "number",
-              "format": "integer"
+              "type": "integer"
             },
             "description": "Maximum accommodates count"
           },

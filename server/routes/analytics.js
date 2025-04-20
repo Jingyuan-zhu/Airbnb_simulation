@@ -88,7 +88,8 @@ const getOverview = wrapAsync(async function (req, res) {
  *                 properties:
  *                   room_type_simple:
  *                     type: string
- *                     description: Type of room (e.g., Entire home/apt, Private room)
+ *                     description: Type of room
+ *                     enum: [entire, private, shared, hotel]
  *                   number_of_listings:
  *                     type: integer
  *                     description: Number of listings with this room type
@@ -163,6 +164,7 @@ const getRoomTypes = wrapAsync(async function (req, res) {
  *                   room_type:
  *                     type: string
  *                     description: Type of room
+ *                     enum: [entire, private, shared, hotel]
  *                   percent_positive_reviews:
  *                     type: number
  *                     format: float
@@ -354,6 +356,7 @@ ORDER BY
  *         name: min_rating
  *         schema:
  *           type: number
+ *           format: float
  *           minimum: 1
  *           maximum: 5
  *         description: Minimum rating threshold for hidden gems (default is 4.8)

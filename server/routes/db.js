@@ -23,7 +23,7 @@ connection.connect((err) => err && console.log(err));
  * Validates parameter based on type
  * @param {any} param - The parameter to validate
  * @param {string} type - The expected type ('string', 'number', 'boolean', etc.)
- * @param {object} options - Additional validation options
+ * @param {object} options - Additional validation options (e.g., {required: true, min: 1, max: 100})
  * @returns {object} - Object with isValid flag and error message if invalid
  */
 const validateParam = (param, type, options = {}) => {

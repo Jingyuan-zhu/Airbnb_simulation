@@ -30,6 +30,7 @@ app.get("/hosts/experienced", routes.experienced);
 app.get("/hosts/types", routes.host_types);
 app.get("/hosts/interactions", routes.host_interactions);
 app.get("/hosts/verified", routes.host_verified);
+app.get("/hosts/high-performers", routes.high_performer_hosts);
 
 // Neighbourhoods routes
 app.get("/neighbourhoods", routes.neighbourhoods);
@@ -40,7 +41,6 @@ app.get("/analytics/room_types", routes.room_types);
 app.get("/analytics/room_type_sentiment", routes.room_type_sentiment);
 app.get("/analytics/monthly_price", routes.monthly_price);
 app.get("/analytics/hidden_gems", routes.hidden_gems);
-app.get("/analytics/high-performers", routes.high_performer_hosts);
 
 // Serve API documentation
 app.use(

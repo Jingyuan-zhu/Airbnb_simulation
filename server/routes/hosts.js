@@ -149,8 +149,7 @@ const getHosts = wrapAsync(async function (req, res) {
  *                     type: integer
  *                     description: Years of experience as a host (rounded)
  *                   total_listings_count:
- *                     type: number
- *                     format: float
+ *                     type: integer
  *                     description: Total number of listings this host has
  *       500:
  *         description: Database error
@@ -556,7 +555,7 @@ ORDER BY
 
 /**
  * @swagger
- * /analytics/high-performers:
+ * /hosts/high-performers:
  *   get:
  *     summary: Get high-performing hosts
  *     description: Returns hosts with a minimum number of listings and high ratings
@@ -567,13 +566,14 @@ ORDER BY
  *       - in: query
  *         name: min_listings
  *         schema:
- *           type: number
+ *           type: integer
  *           minimum: 1
  *         description: Minimum number of listings a host must have (default is 3)
  *       - in: query
  *         name: min_rating
  *         schema:
  *           type: number
+ *           format: float
  *           minimum: 1
  *           maximum: 5
  *         description: Minimum rating a host's listings must have (default is 4.7)
@@ -600,8 +600,7 @@ ORDER BY
  *                     type: string
  *                     description: Name of the host
  *                   total_listings_count:
- *                     type: number
- *                     format: float
+ *                     type: integer
  *                     description: Total number of listings this host has
  *                   average_value_score_across_listings:
  *                     type: number
@@ -632,7 +631,8 @@ ORDER BY
  *                   example: Database error. Please try again later.
  */
 // Query 10
-// Route: GET /analytics/high-performers
+// Route: GET /hosts/high-performers
+// Finds hosts who consistently deliver high-quality experiences across their entire portfolio
 const getHighPerformerHosts = wrapAsync(async function (req, res) {
   // Validate parameters
   const minListingsValidation = validateParam(req.query.min_listings, 'number', { min: 1 });
