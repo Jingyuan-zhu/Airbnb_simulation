@@ -11,10 +11,6 @@ const swaggerOptions = {
       title: "Airbnb Visualisation API",
       description: "API for accessing and analyzing Airbnb listing data",
       version: "1.0.0",
-      contact: {
-        name: "Support",
-        email: "support@example.com",
-      },
     },
     servers: [
       {

@@ -419,7 +419,6 @@ const getListing = wrapAsync(async function (req, res) {
  *                   type: string
  *                   example: Database error. Please try again later.
  */
-// Route: GET /search_listings
 const searchListings = wrapAsync(async function (req, res) {
   // Validate pagination parameters
   const pagination = validatePagination(req.query, res);
