@@ -18,274 +18,6 @@ const connection = new Pool({
 });
 connection.connect((err) => err && console.log(err));
 
-/******************
- * WARM UP ROUTES *
- ******************/
-
-// Route 1: GET /author/:type
-const author = async function(req, res) {
-  // TODO (TASK 1): replace the values of name and pennkey with your own
-  const name = 'Jingyuan Zhu';
-  const pennkey = '25697604';
-
-  // checks the value of type in the request parameters
-  // note that parameters are required and are specified in server.js in the endpoint by a colon (e.g. /author/:type)
-  if (req.params.type === 'name') {
-    // res.json returns data back to the requester via an HTTP response
-    res.json({ data: name });
-  } else if (req.params.type === 'pennkey') {
-    // TODO (TASK 2): edit the else if condition to check if the request parameter is 'pennkey' and if so, send back a JSON response with the pennkey
-    res.json({ data: pennkey });
-  } else {
-    res.status(400).json({});
-  }
-}
-
-// Route 2: GET /random
-const random = async function(req, res) {
-  // you can use a ternary operator to check the value of request query values
-  // which can be particularly useful for setting the default value of queries
-  // note if users do not provide a value for the query it will be undefined, which is falsey
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
-
-  // Here is a complete example of how to query the database in JavaScript.
-  // Only a small change (unrelated to querying) is required for TASK 3 in this route.
-  connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE explicit <= ${explicit}
-    ORDER BY RANDOM()
-    LIMIT 1
-  `, (err, data) => {
-    if (err) {
-      // If there is an error for some reason, print the error message and
-      // return an empty object instead
-      console.log(err);
-      // Be cognizant of the fact we return an empty object {}. For future routes, depending on the
-      // return type you may need to return an empty array [] instead.
-      res.json({});
-    } else {
-      // Here, we return results of the query as an object, keeping only relevant data
-      // being song_id and title which you will add. In this case, there is only one song
-      // so we just directly access the first element of the query results array (data.rows[0])
-      // TODO (TASK 3): also return the song title in the response
-      res.json({
-        song_id: data.rows[0].song_id,
-        title: data.rows[0].title
-      });
-    }
-  });
-}
-
-/********************************
- * BASIC SONG/ALBUM INFO ROUTES *
- ********************************/
-
-// Route 3: GET /song/:song_id
-const song = async function(req, res) {
-  // TODO (TASK 4): implement a route that given a song_id, returns all information about the song
-  // Hint: unlike route 2, you can directly SELECT * and just return data.rows[0]
-  // Most of the code is already written for you, you just need to fill in the query
-  connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE song_id = '${req.params.song_id}'
-  `, (err, data) => {
-    if (err) {
-      console.log(err);
-      res.json({});
-    } else {
-      res.json(data.rows[0]);
-    }
-  });
-}
-
-// Route 4: GET /album/:album_id
-const album = async function(req, res) {
-  // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
-  connection.query(`
-    SELECT *
-    FROM Albums
-    WHERE album_id = '${req.params.album_id}'
-  `, (err, data) => {
-    if (err) {
-      console.log(err);
-      res.json({});
-    } else {
-      res.json(data.rows[0]);
-    }
-  });
-}
-
-// Route 5: GET /albums
-const albums = async function(req, res) {
-  // TODO (TASK 6): implement a route that returns all albums ordered by release date (descending)
-  // Note that in this case you will need to return multiple albums, so you will need to return an array of objects
-  connection.query(`
-    SELECT *
-    FROM Albums
-    ORDER BY release_date DESC
-  `, (err, data) => {
-    if (err) {
-      console.log(err);
-      res.json([]);
-    } else {
-      res.json(data.rows);
-    }
-  });
-}
-
-// Route 6: GET /album_songs/:album_id
-const album_songs = async function(req, res) {
-  // TODO (TASK 7): implement a route that given an album_id, returns all songs on that album ordered by track number (ascending)
-  connection.query(`
-    SELECT song_id, title, number, duration, plays
-    FROM Songs
-    WHERE album_id = '${req.params.album_id}'
-    ORDER BY number ASC
-  `, (err, data) => {
-    if (err) {
-      console.log(err);
-      res.json([]);
-    } else {
-      res.json(data.rows);
-    }
-  });
-}
-
-/************************
- * ADVANCED INFO ROUTES *
- ************************/
-
-// Route 7: GET /top_songs
-const top_songs = async function(req, res) {
-  const page = req.query.page;
-  // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-
-  if (!page) {
-    // TODO (TASK 9)): query the database and return all songs ordered by number of plays (descending)
-    // Hint: you will need to use a JOIN to get the album title as well
-    connection.query(`
-      SELECT s.song_id, s.title, s.album_id, a.title AS album, s.plays
-      FROM Songs s
-      JOIN Albums a ON s.album_id = a.album_id
-      ORDER BY s.plays DESC
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
-    });
-  } else {
-    // TODO (TASK 10): reimplement TASK 9 with pagination
-    // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
-    const offset = (parseInt(page) - 1) * pageSize;
-    connection.query(`
-      SELECT s.song_id, s.title, s.album_id, a.title AS album, s.plays
-      FROM Songs s
-      JOIN Albums a ON s.album_id = a.album_id
-      ORDER BY s.plays DESC
-      LIMIT ${pageSize}
-      OFFSET ${offset}
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
-    });
-  }
-}
-
-// Route 8: GET /top_albums
-const top_albums = async function(req, res) {
-  // TODO (TASK 11): return the top albums ordered by aggregate number of plays of all songs on the album (descending), with optional pagination (as in route 7)
-  // Hint: you will need to use a JOIN and aggregation to get the total plays of songs in an album
-  const page = req.query.page;
-  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
-
-  const query = `
-    SELECT a.album_id, a.title, SUM(s.plays) AS plays
-    FROM Albums a
-    JOIN Songs s ON a.album_id = s.album_id
-    GROUP BY a.album_id, a.title
-    ORDER BY plays DESC
-  `;
-
-  if (!page) {
-    connection.query(query, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
-    });
-  } else {
-    const offset = (parseInt(page) - 1) * pageSize;
-    connection.query(`
-      ${query}
-      LIMIT ${pageSize}
-      OFFSET ${offset}
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
-    });
-  }
-}
-
-// Route 9: GET /search_songs
-const search_songs = async function(req, res) {
-  // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
-  // Some default parameters have been provided for you, but you will need to fill in the rest
-  const title = req.query.title ?? '';
-  const durationLow = req.query.duration_low ?? 60;
-  const durationHigh = req.query.duration_high ?? 660;
-  const playsLow = req.query.plays_low ?? 0;
-  const playsHigh = req.query.plays_high ?? 1100000000;
-  const danceabilityLow = req.query.danceability_low ?? 0;
-  const danceabilityHigh = req.query.danceability_high ?? 1;
-  const energyLow = req.query.energy_low ?? 0;
-  const energyHigh = req.query.energy_high ?? 1;
-  const valenceLow = req.query.valence_low ?? 0;
-  const valenceHigh = req.query.valence_high ?? 1;
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
-
-  connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE 
-      title LIKE '%${title}%'
-      AND duration >= ${durationLow}
-      AND duration <= ${durationHigh}
-      AND plays >= ${playsLow}
-      AND plays <= ${playsHigh}
-      AND danceability >= ${danceabilityLow}
-      AND danceability <= ${danceabilityHigh}
-      AND energy >= ${energyLow}
-      AND energy <= ${energyHigh}
-      AND valence >= ${valenceLow}
-      AND valence <= ${valenceHigh}
-      AND explicit <= ${explicit}
-    ORDER BY title ASC
-  `, (err, data) => {
-    if (err) {
-      console.log(err);
-      res.json([]);
-    } else {
-      res.json(data.rows);
-    }
-  });
-}
-
 // Route: GET /home
 const home = async function(req, res) {
   // Get basic statistics about listings
@@ -419,16 +151,293 @@ const neighbourhoods = async function(req, res) {
   });
 }
 
+// Route 0: GET /search_listings
+const search_listings = async function(req, res) {
+  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
+  const offset = (page - 1) * pageSize;
+
+  const name = req.query.name ?? '';
+  const neighbourhood = req.query.neighbourhood_cleansed ?? '';
+  const roomType = req.query.room_type_simple ?? '';
+  const description = req.query.description ?? '';
+  const pictureUrl = req.query.picture_url ?? '';
+  const latitudeLow = req.query.latitude_low ?? -90;
+  const latitudeHigh = req.query.latitude_high ?? 90;
+  const longitudeLow = req.query.longitude_low ?? -180;
+  const longitudeHigh = req.query.longitude_high ?? 180;
+  const accommodatesLow = req.query.accommodates_low ?? 1;
+  const accommodatesHigh = req.query.accommodates_high ?? 100;
+  const bathroomsLow = req.query.bathrooms_low ?? 0;
+  const bathroomsHigh = req.query.bathrooms_high ?? 50;
+  const bedroomsLow = req.query.bedrooms_low ?? 0;
+  const bedroomsHigh = req.query.bedrooms_high ?? 50;
+  const bedsLow = req.query.beds_low ?? 0;
+  const bedsHigh = req.query.beds_high ?? 100;
+  const priceLow = req.query.price_low ?? 0;
+  const priceHigh = req.query.price_high ?? 100000;
+
+  const query = `
+    SELECT *
+    FROM listings
+    WHERE 
+      name ILIKE $1
+      AND description ILIKE $2
+      AND picture_url ILIKE $3
+      AND neighbourhood_cleansed ILIKE $4
+      AND room_type_simple ILIKE $5
+      AND latitude >= $6
+      AND latitude <= $7
+      AND longitude >= $8
+      AND longitude <= $9
+      AND accommodates >= $10
+      AND accommodates <= $11
+      AND bathrooms >= $12
+      AND bathrooms <= $13
+      AND bedrooms >= $14
+      AND bedrooms <= $15
+      AND beds >= $16
+      AND beds <= $17
+      AND price >= $18
+      AND price <= $19
+    ORDER BY name ASC
+    LIMIT ${pageSize}
+    OFFSET ${offset}
+  `;
+
+  const params = [
+    `%${name}%`,
+    `%${description}%`,
+    `%${pictureUrl}%`,
+    `%${neighbourhood}%`,
+    `%${roomType}%`,
+    latitudeLow,
+    latitudeHigh,
+    longitudeLow,
+    longitudeHigh,
+    accommodatesLow,
+    accommodatesHigh,
+    bathroomsLow,
+    bathroomsHigh,
+    bedroomsLow,
+    bedroomsHigh,
+    bedsLow,
+    bedsHigh,
+    priceLow,
+    priceHigh
+  ];
+
+  connection.query(query, params, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+};
+
+// Route 1: GET /overview
+const overview = async function(req, res) {
+  connection.query(`
+    SELECT
+        l.neighbourhood_cleansed,
+        COUNT(l.id) AS number_of_listings,
+        ROUND(AVG(l.price)) AS average_price
+    FROM
+        listings l
+    GROUP BY
+        l.neighbourhood_cleansed
+    ORDER BY
+        number_of_listings DESC, average_price DESC;
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route 2: GET /experienced
+const experienced = async function(req, res) {
+  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
+  connection.query(`
+    SELECT
+        host_id,
+        host_name,
+        ROUND(years_experience) AS experience,
+        total_listings_count
+    FROM
+        host
+    ORDER BY
+        years_experience DESC
+    LIMIT ${pageSize};
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route 3: GET /types
+const room_types = async function(req, res) {
+  connection.query(`
+    SELECT
+        room_type_simple,
+        COUNT(id) AS number_of_listings,
+        CAST(COUNT(id) * 100.0 / (SELECT COUNT(*) FROM listings) AS DECIMAL(5,2)) AS percentage_of_total
+    FROM
+        listings
+    GROUP BY
+        room_type_simple
+    ORDER BY
+        number_of_listings DESC;
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route 4: GET /host_types
+const host_types = async function(req, res) {
+  connection.query(`
+WITH NeighbourhoodHostStats AS (
+    SELECT
+        l.neighbourhood_cleansed,
+        h.is_superhost,
+        ROUND(AVG(ri.scores_rating::NUMERIC), 2) AS avg_rating,
+        ROUND(AVG(ri.reviews_per_month::NUMERIC), 2) AS avg_reviews_per_month,
+        ROUND(AVG(l.price::NUMERIC), 2) AS avg_price,
+        COUNT(DISTINCT l.id) AS num_listings
+    FROM
+        listings l
+            JOIN
+        host h ON l.host_id = h.host_id
+JOIN
+        review_info ri ON l.id = ri.id
+    WHERE
+        h.is_superhost IS NOT NULL
+      AND ri.scores_rating IS NOT NULL
+      AND ri.reviews_per_month IS NOT NULL
+    GROUP BY
+        l.neighbourhood_cleansed,
+        h.is_superhost
+),
+     NeighbourhoodSuperhostCount AS (
+         SELECT
+             neighbourhood_cleansed,
+             COUNT(DISTINCT is_superhost) AS distinct_host_types
+         FROM
+             NeighbourhoodHostStats
+         GROUP BY
+             neighbourhood_cleansed
+     )
+SELECT
+    nhs.neighbourhood_cleansed,
+    CASE WHEN nhs.is_superhost THEN 'Superhost' ELSE 'Non-Superhost' END AS host_type,
+    nhs.avg_rating,
+    nhs.avg_reviews_per_month,
+    nhs.avg_price,
+    nhs.num_listings
+FROM
+    NeighbourhoodHostStats nhs
+        JOIN
+    NeighbourhoodSuperhostCount nsc ON nhs.neighbourhood_cleansed = nsc.neighbourhood_cleansed
+WHERE
+    nsc.distinct_host_types = 2
+ORDER BY
+    nhs.neighbourhood_cleansed,
+    nhs.is_superhost DESC;
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route 5: GET /host_interactions
+const host_interactions = async function(req, res) {
+  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const pageSize = req.query.page_size ? parseInt(req.query.page_size) : 10;
+  const offset = (page - 1) * pageSize;
+  connection.query(`
+WITH HostsWithGoodInteraction AS (
+    SELECT DISTINCT
+                    l_sub.host_id
+    FROM
+        reviews r_sub
+            JOIN
+        listings l_sub ON r_sub.listing_id = l_sub.id
+    WHERE
+        r_sub.sentiment = 'Positive'
+      AND (r_sub.comments ILIKE '%communication%' OR
+           r_sub.comments ILIKE '%responsive%' OR
+           r_sub.comments ILIKE '%check-in%' OR
+           r_sub.comments ILIKE '%helpful%')
+    GROUP BY
+        l_sub.host_id
+    HAVING
+        COUNT(r_sub.id) > 5
+)
+        
+SELECT
+    l.neighbourhood_cleansed,
+    l.bedrooms,
+    ROUND(AVG(ri.scores_rating::NUMERIC) FILTER (WHERE hgi.host_id IS NOT NULL), 2) AS avg_rating_good_interaction_hosts,
+    ROUND(AVG(l.price::NUMERIC) FILTER (WHERE hgi.host_id IS NOT NULL), 2) AS avg_price_good_interaction_hosts,
+    COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NOT NULL) AS count_listings_good_interaction_hosts,
+
+    ROUND(AVG(ri.scores_rating::NUMERIC) FILTER (WHERE hgi.host_id IS NULL), 2) AS avg_rating_other_hosts,
+    ROUND(AVG(l.price::NUMERIC) FILTER (WHERE hgi.host_id IS NULL), 2) AS avg_price_other_hosts,
+    COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NULL) AS count_listings_other_hosts
+FROM
+    listings l
+        JOIN
+    review_info ri ON l.id = ri.id
+        LEFT JOIN
+        HostsWithGoodInteraction hgi ON l.host_id = hgi.host_id
+WHERE
+    l.bedrooms IS NOT NULL AND ri.scores_rating IS NOT NULL
+GROUP BY
+    l.neighbourhood_cleansed,
+    l.bedrooms
+HAVING 
+   COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NOT NULL) > 0
+   AND COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NULL) > 0
+ORDER BY
+    l.neighbourhood_cleansed,
+    l.bedrooms
+LIMIT ${pageSize}
+OFFSET ${offset};
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
 module.exports = {
-  author,
-  random,
-  song,
-  album,
-  albums,
-  album_songs,
-  top_songs,
-  top_albums,
-  search_songs,
+  overview,
+  experienced,
+  room_types,
+  host_types,
+  host_interactions,
+  search_listings,
   home,
   listings,
   listing,
