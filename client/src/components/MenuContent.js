@@ -11,13 +11,13 @@ import Typography from "@mui/material/Typography";
 
 const mainListItems = [
   { text: "Home", icon: <HomeRoundedIcon />, route: "/" },
-  { text: "Stats", icon: <AnalyticsRoundedIcon />, route: "/stats" },
+  { text: "Neighbourhoods", icon: <AnalyticsRoundedIcon />, route: "/stats" },
   { text: "Listings", icon: <AnalyticsRoundedIcon />, route: "/listings" },
   { text: "Map", icon: <PeopleRoundedIcon />, route: "/map" },
 ];
 
 const secondaryListItems = [
-  { text: "Settings", icon: <SettingsRoundedIcon /> },
+  // { text: "Settings", icon: <SettingsRoundedIcon /> },
   // { text: 'About', icon: <InfoRoundedIcon /> },
   // { text: 'Feedback', icon: <HelpRoundedIcon /> },
 ];
