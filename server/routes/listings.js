@@ -594,7 +594,7 @@ const searchListings = wrapAsync(async function (req, res) {
  *                   type: string
  *                   example: Database error. Please try again later.
  */
-// Route: GET /reviews/:listing_id
+// Route: GET /listings/:listing_id/reviews
 const getReviews = wrapAsync(async function (req, res) {
   // Validate listing_id parameter
   const listingIdValidation = validateParam(req.params.listing_id, 'number', { required: true, min: 1 });

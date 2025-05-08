@@ -1,35 +1,60 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Container, Typography, Grid, Paper, Divider, Box, Chip } from '@mui/material';
-import LazyTable from '../components/LazyTable';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import {
+  Container,
+  Typography,
+  Grid,
+  Paper,
+  Divider,
+  Box,
+  Chip,
+} from "@mui/material";
+import LazyTable from "../components/LazyTable";
 
-const config = require('../config.json');
+const config = require("../config.json");
 
 export default function ListingDetailPage() {
   const { listing_id } = useParams();
   const [listing, setListing] = useState(null);
-  
+
   useEffect(() => {
     // Fetch the listing details
-    fetch(`http://${config.server_host}:${config.server_port}/listing/${listing_id}`)
-      .then(res => res.json())
-      .then(data => setListing(data));
+    fetch(
+      `http://${config.server_host}:${config.server_port}/listings/${listing_id}`
+    )
+      .then((res) => res.json())
+      // .then((data) => {
+      //   // Format the listing data
+      //   const formattedData = {
+      //     ...data,
+      //     price: data.price.toLocaleString(),
+      //     host_response_rate: data.host_response_rate
+      //       ? `${data.host_response_rate}%`
+      //       : "N/A",
+      //     bathrooms_text: data.bathrooms_text || "N/A",
+      //     host_since: data.host_since || "N/A",
+      //     number_of_reviews: data.number_of_reviews || 0,
+      //     review_scores_rating: data.review_scores_rating || 0,
+      //   };
+      //   return formattedData;
+      // })
+      .then((data) => setListing(data));
   }, [listing_id]);
 
   // Define the columns for the reviews table
   const reviewColumns = [
     {
-      field: 'date',
-      headerName: 'Date',
-      width: 150
+      field: "date",
+      headerName: "Date",
+      width: 150,
     },
     {
-      field: 'comments',
-      headerName: 'Review',
-      width: 650
-    }
+      field: "comments",
+      headerName: "Review",
+      width: 650,
+    },
   ];
-  
+
   // If listing is still loading, display a loading message
   if (!listing) {
     return (
@@ -44,7 +69,7 @@ export default function ListingDetailPage() {
       <Typography variant="h4" gutterBottom>
         {listing.name}
       </Typography>
-      
+
       <Grid container spacing={3}>
         {/* Listing Details */}
         <Grid item xs={12} md={8}>
@@ -53,11 +78,11 @@ export default function ListingDetailPage() {
               About this listing
             </Typography>
             <Typography variant="body1" paragraph>
-              {listing.description || 'No description available.'}
+              {listing.description || "No description available."}
             </Typography>
-            
+
             <Divider sx={{ my: 2 }} />
-            
+
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <Typography variant="subtitle1" color="text.secondary">
@@ -71,9 +96,7 @@ export default function ListingDetailPage() {
                 <Typography variant="subtitle1" color="text.secondary">
                   Room Type
                 </Typography>
-                <Typography variant="body1">
-                  {listing.room_type}
-                </Typography>
+                <Typography variant="body1">{listing.room_type}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle1" color="text.secondary">
@@ -88,7 +111,7 @@ export default function ListingDetailPage() {
                   Bathrooms
                 </Typography>
                 <Typography variant="body1">
-                  {listing.bathrooms_text || 'N/A'}
+                  {listing.bathrooms_text || "N/A"}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
@@ -96,28 +119,26 @@ export default function ListingDetailPage() {
                   Bedrooms
                 </Typography>
                 <Typography variant="body1">
-                  {listing.bedrooms || 'N/A'}
+                  {listing.bedrooms || "N/A"}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle1" color="text.secondary">
                   Beds
                 </Typography>
-                <Typography variant="body1">
-                  {listing.beds || 'N/A'}
-                </Typography>
+                <Typography variant="body1">{listing.beds || "N/A"}</Typography>
               </Grid>
             </Grid>
           </Paper>
 
           {/* Reviews Section */}
-          <Paper sx={{ p: 3 }}>
+          {/* <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Reviews ({listing.number_of_reviews})
             </Typography>
             {listing.number_of_reviews > 0 ? (
-              <LazyTable 
-                route={`http://${config.server_host}:${config.server_port}/reviews/${listing_id}`} 
+              <LazyTable
+                route={`http://${config.server_host}:${config.server_port}/${listing_id}/reviews`}
                 columns={reviewColumns}
                 defaultPageSize={5}
                 rowsPerPageOptions={[5, 10, 25]}
@@ -127,7 +148,7 @@ export default function ListingDetailPage() {
                 No reviews available for this listing.
               </Typography>
             )}
-          </Paper>
+          </Paper> */}
         </Grid>
 
         {/* Price and Availability */}
@@ -139,30 +160,43 @@ export default function ListingDetailPage() {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               per night
             </Typography>
-            
+
             <Divider sx={{ my: 2 }} />
-            
+
             <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              <Typography
+                variant="subtitle1"
+                color="text.secondary"
+                gutterBottom
+              >
                 Availability
               </Typography>
               <Typography variant="body1">
-                {listing.availability_365 === 0 ? 'Not available' : 
-                 `Available for ${listing.availability_365} days in the year`}
+                {listing.availability_365 === 0
+                  ? "Not available"
+                  : `Available for ${listing.availability_365} days in the year`}
               </Typography>
             </Box>
-            
+
             <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              <Typography
+                variant="subtitle1"
+                color="text.secondary"
+                gutterBottom
+              >
                 Minimum Stay
               </Typography>
               <Typography variant="body1">
                 {listing.minimum_nights} night(s)
               </Typography>
             </Box>
-            
+
             <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              <Typography
+                variant="subtitle1"
+                color="text.secondary"
+                gutterBottom
+              >
                 Maximum Stay
               </Typography>
               <Typography variant="body1">
@@ -170,23 +204,23 @@ export default function ListingDetailPage() {
               </Typography>
             </Box>
           </Paper>
-          
+
           <Paper sx={{ p: 3 }}>
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
               Host Information
             </Typography>
             <Typography variant="h6" gutterBottom>
-              {listing.host_name || 'Unknown Host'}
+              {listing.host_name || "Unknown Host"}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Host since: {listing.host_since || 'Unknown'}
+              Host since: {listing.host_since || "Unknown"}
             </Typography>
             <Typography variant="body1" paragraph>
-              Response rate: {listing.host_response_rate || 'Unknown'}
+              Response rate: {listing.host_response_rate || "Unknown"}
             </Typography>
           </Paper>
         </Grid>
       </Grid>
     </Container>
   );
-} 
+}

@@ -150,7 +150,7 @@ const ListingDetailsPane = ({ listing, onClose }) => {
           color="primary" 
           fullWidth 
           component={Link} 
-          to={`/listing/${listing.id}`}
+          to={`/listings/${listing.id}`}
           sx={{ mt: 2 }}
         >
           View Full Details

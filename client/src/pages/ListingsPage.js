@@ -11,7 +11,7 @@ export default function ListingsPage() {
     {
       field: 'name',
       headerName: 'Listing Name',
-      // renderCell: (row) => <NavLink to={`/listings/${row.id}`}>{row.name}</NavLink>,
+      renderCell: (row) => <NavLink to={`/listings/${row.id}`}>{row.name}</NavLink>,
       width: 400
     },
     {
