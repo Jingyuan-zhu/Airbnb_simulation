@@ -11,16 +11,16 @@ export default function ListingsPage() {
     {
       field: 'name',
       headerName: 'Listing Name',
-      renderCell: (row) => <NavLink to={`/listings/${row.id}`}>{row.name}</NavLink>,
+      // renderCell: (row) => <NavLink to={`/listings/${row.id}`}>{row.name}</NavLink>,
       width: 400
     },
     {
-      field: 'neighbourhood',
+      field: 'neighbourhood_cleansed',
       headerName: 'Neighborhood',
       width: 200
     },
     {
-      field: 'room_type',
+      field: 'room_type_simple',
       headerName: 'Room Type',
       width: 150
     },
@@ -31,10 +31,36 @@ export default function ListingsPage() {
       width: 100
     },
     {
-      field: 'number_of_reviews',
-      headerName: 'Reviews',
+      field: 'accommodates',
+      headerName: 'Accommodates',
       width: 100
-    }
+    },
+    {
+      field: 'bathrooms',
+      headerName: 'Bathrooms',
+      width: 100
+    },
+    {
+      field: 'bedrooms',
+      headerName: 'Bedrooms',
+      width: 100
+    },
+    {
+      field: 'beds',
+      headerName: 'Beds',
+      width: 100
+    },
+    // {
+    //   field: 'number_of_reviews',
+    //   headerName: 'Number of Reviews',
+    //   width: 150
+    // },
+    // {
+    //   field: 'review_scores_rating',
+    //   headerName: 'Review Score',
+    //   renderCell: (row) => `${row.review_scores_rating} / 10`,
+    //   width: 150
+    // }
   ];
 
   return (

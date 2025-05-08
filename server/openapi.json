@@ -1122,7 +1122,7 @@
                         "type": "string",
                         "description": "Neighbourhood where the listing is located"
                       },
-                      "room_type": {
+                      "room_type_simple": {
                         "type": "string",
                         "description": "Type of room (e.g., Entire home/apt, Private room)"
                       },

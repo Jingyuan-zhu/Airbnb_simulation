@@ -14,19 +14,18 @@ import AppTheme from "./theme/AppTheme";
 // App is the root component of our application with our page routes
 export default function App() {
   return (
-    // <AppTheme>
-    //   <CssBaseline enableColorScheme />
-    //   <BrowserRouter>
-    //     <NavBar />
-    //     <Routes>
-    //       <Route path="/" element={<HomePage />} />
-    //       <Route path="/listings" element={<ListingsPage />} />
-    //       <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
-    //       <Route path="/map" element={<MapPage />} />
-    //       <Route path="/dashboard" element={<Dashboard />} />
-    //     </Routes>
-    //   </BrowserRouter>
-    // </AppTheme>
-    <HomePage />
+    <AppTheme>
+      <CssBaseline enableColorScheme />
+      <BrowserRouter>
+        <NavBar />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/listings" element={<ListingsPage />} />
+          <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </BrowserRouter>
+    </AppTheme>
   );
 }

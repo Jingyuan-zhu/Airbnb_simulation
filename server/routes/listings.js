@@ -41,7 +41,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *                   neighbourhood:
  *                     type: string
  *                     description: Neighbourhood where the listing is located
- *                   room_type:
+ *                   room_type_simple:
  *                     type: string
  *                     description: Type of room (e.g., Entire home/apt, Private room)
  *                   price:
@@ -82,13 +82,7 @@ const getListings = wrapAsync(async function (req, res) {
   // Get paginated listings
   connection.query(
     `
-    SELECT 
-      id,
-      name,
-      neighbourhood_cleansed AS neighbourhood,
-      room_type,
-      price,
-      number_of_reviews
+    SELECT *
     FROM listings
     ORDER BY id
     LIMIT $1
