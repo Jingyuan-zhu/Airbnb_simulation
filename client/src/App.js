@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import ListingsPage from "./pages/ListingsPage";
 import ListingDetailPage from "./pages/ListingDetailPage";
 import MapPage from "./pages/MapPage";
+import StatsPage from "./pages/StatsPage";
 
 import Dashboard from "./pages/Dashboard";
 import AppTheme from "./theme/AppTheme";
@@ -20,6 +21,7 @@ export default function App() {
         <NavBar />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/stats" element={<StatsPage />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
           <Route path="/map" element={<MapPage />} />
