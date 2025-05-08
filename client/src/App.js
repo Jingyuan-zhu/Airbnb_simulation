@@ -10,35 +10,23 @@ import MapPage from "./pages/MapPage";
 import Dashboard from "./pages/Dashboard";
 import AppTheme from "./theme/AppTheme";
 
-import {
-  chartsCustomizations,
-  dataGridCustomizations,
-  datePickersCustomizations,
-  treeViewCustomizations,
-} from "./theme/customizations";
-
-const xThemeComponents = {
-  ...chartsCustomizations,
-  ...dataGridCustomizations,
-  ...datePickersCustomizations,
-  ...treeViewCustomizations,
-};
 
 // App is the root component of our application with our page routes
 export default function App() {
   return (
-        <AppTheme themeComponents={xThemeComponents}>
-      <CssBaseline enableColorScheme />
-      <BrowserRouter>
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/listings" element={<ListingsPage />} />
-          <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </BrowserRouter>
-    </AppTheme>
+    // <AppTheme>
+    //   <CssBaseline enableColorScheme />
+    //   <BrowserRouter>
+    //     <NavBar />
+    //     <Routes>
+    //       <Route path="/" element={<HomePage />} />
+    //       <Route path="/listings" element={<ListingsPage />} />
+    //       <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
+    //       <Route path="/map" element={<MapPage />} />
+    //       <Route path="/dashboard" element={<Dashboard />} />
+    //     </Routes>
+    //   </BrowserRouter>
+    // </AppTheme>
+    <HomePage />
   );
 }

@@ -13,6 +13,7 @@ module.exports = {
   listing: listingsRoutes.getListing,
   search_listings: listingsRoutes.searchListings,
   reviews: listingsRoutes.getReviews,
+  map_listings: listingsRoutes.getMapListings,
   
   // Hosts routes
   hosts: hostsRoutes.getHosts,

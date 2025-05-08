@@ -21,6 +21,7 @@ app.get("/home", routes.home);
 // Listings routes
 app.get("/listings", routes.listings);
 app.get("/listings/search", routes.search_listings);
+app.get("/listings/map", routes.map_listings);
 app.get("/listings/:listing_id", routes.listing);
 app.get("/listings/:listing_id/reviews", routes.reviews);
 

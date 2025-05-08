@@ -638,9 +638,152 @@ const getReviews = wrapAsync(async function (req, res) {
   );
 });
 
+/**
+ * @swagger
+ * /listings/map:
+ *   get:
+ *     summary: Get listings for map display
+ *     description: Returns listings with coordinates and essential information for map display
+ *     tags:
+ *       - Listings
+ *     parameters:
+ *       - in: query
+ *         name: lat_min
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum latitude for bounding box
+ *       - in: query
+ *         name: lat_max
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum latitude for bounding box
+ *       - in: query
+ *         name: lng_min
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Minimum longitude for bounding box
+ *       - in: query
+ *         name: lng_max
+ *         schema:
+ *           type: number
+ *           format: float
+ *         description: Maximum longitude for bounding box
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000
+ *         description: Maximum number of listings to return (default is 500, max 1000)
+ *     responses:
+ *       200:
+ *         description: A list of listings for map display
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   latitude:
+ *                     type: number
+ *                     format: float
+ *                   longitude:
+ *                     type: number
+ *                     format: float
+ *                   price:
+ *                     type: number
+ *                     format: float
+ *                   room_type_simple:
+ *                     type: string
+ *                   picture_url:
+ *                     type: string
+ *                   neighbourhood_cleansed:
+ *                     type: string
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Database error
+ */
+const getMapListings = wrapAsync(async function (req, res) {
+  // Parse and validate query parameters
+  const latMin = req.query.lat_min ? parseFloat(req.query.lat_min) : null;
+  const latMax = req.query.lat_max ? parseFloat(req.query.lat_max) : null;
+  const lngMin = req.query.lng_min ? parseFloat(req.query.lng_min) : null;
+  const lngMax = req.query.lng_max ? parseFloat(req.query.lng_max) : null;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 500;
+  
+  // Validate limit
+  if (isNaN(limit) || limit < 1 || limit > 1000) {
+    return res.status(400).json({ error: "Invalid limit parameter. Must be between 1 and 1000." });
+  }
+  
+  // Validate coordinates if provided
+  if ((latMin !== null && isNaN(latMin)) || 
+      (latMax !== null && isNaN(latMax)) ||
+      (lngMin !== null && isNaN(lngMin)) ||
+      (lngMax !== null && isNaN(lngMax))) {
+    return res.status(400).json({ error: "Invalid coordinate parameters." });
+  }
+  
+  // Build WHERE clause for bounding box, if coordinates are provided
+  let whereClause = '';
+  const params = [];
+  
+  if (latMin !== null && latMax !== null && lngMin !== null && lngMax !== null) {
+    whereClause = 'WHERE latitude >= $1 AND latitude <= $2 AND longitude >= $3 AND longitude <= $4';
+    params.push(latMin, latMax, lngMin, lngMax);
+  }
+  
+  // Build query
+  const query = `
+    SELECT 
+      l.id, 
+      l.name, 
+      l.latitude, 
+      l.longitude, 
+      l.price, 
+      l.room_type_simple,
+      l.picture_url,
+      l.neighbourhood_cleansed,
+      l.accommodates,
+      l.bedrooms,
+      l.beds,
+      ri.scores_rating
+    FROM 
+      listings l
+    LEFT JOIN 
+      review_info ri ON l.id = ri.id
+    ${whereClause}
+    ORDER BY 
+      ri.scores_rating DESC NULLS LAST
+    LIMIT $${params.length + 1}
+  `;
+  
+  params.push(limit);
+  
+  // Execute query
+  connection.query(query, params, (err, data) => {
+    if (err) {
+      console.error("Error fetching map listings:", err);
+      return res.status(500).json({ error: "Database error. Please try again later." });
+    }
+    
+    res.json(data.rows || []);
+  });
+});
+
 module.exports = {
   getListings,
   getListing,
   searchListings,
   getReviews,
+  getMapListings
 };
