@@ -522,7 +522,7 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is 10, max 100)"
+            "description": "Number of items per page (default is return all)"
           }
         ],
         "responses": {
@@ -785,7 +785,7 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is 10, max 100)"
+            "description": "Number of items per page (default is to return all)"
           }
         ],
         "responses": {
@@ -1097,7 +1097,7 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is 10, max 100)"
+            "description": "Number of items per page (default is return all)"
           }
         ],
         "responses": {
@@ -1330,7 +1330,7 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is 10, max 100)"
+            "description": "Number of items per page (default is return all)"
           },
           {
             "in": "query",
@@ -1631,7 +1631,7 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is 10, max 100)"
+            "description": "Number of items per page (default is return all)"
           }
         ],
         "responses": {

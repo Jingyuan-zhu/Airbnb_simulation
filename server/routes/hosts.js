@@ -1,4 +1,9 @@
-const { connection, validateParam, validatePagination, wrapAsync } = require('./db');
+const {
+  connection,
+  validateParam,
+  validatePagination,
+  wrapAsync,
+} = require("./db");
 
 /**
  * @swagger
@@ -21,7 +26,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require('./
  *           type: integer
  *           minimum: 1
  *           maximum: 100
- *         description: Number of items per page (default is 10, max 100)
+ *         description: Number of items per page (default is return all)
  *     responses:
  *       200:
  *         description: A list of hosts
@@ -113,7 +118,9 @@ const getHosts = wrapAsync(async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -182,7 +189,9 @@ const getExperiencedHosts = wrapAsync(async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -300,7 +309,9 @@ ORDER BY
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -330,7 +341,7 @@ ORDER BY
  *           type: integer
  *           minimum: 1
  *           maximum: 100
- *         description: Number of items per page (default is 10, max 100)
+ *         description: Number of items per page (default is to return all)
  *     responses:
  *       200:
  *         description: Comparison of metrics between hosts with good interaction and others
@@ -398,63 +409,65 @@ const getHostInteractions = wrapAsync(async function (req, res) {
   if (!pagination) return; // Validation failed, response already sent
 
   const { page, pageSize, offset } = pagination;
-  
+
   connection.query(
     `
-WITH HostsWithGoodInteraction AS (
-    SELECT DISTINCT
-                    l_sub.host_id
-    FROM
-        reviews r_sub
-            JOIN
-        listings l_sub ON r_sub.listing_id = l_sub.id
-    WHERE
-        r_sub.sentiment = 'Positive'
-      AND (r_sub.comments ILIKE '%communication%' OR
-           r_sub.comments ILIKE '%responsive%' OR
-           r_sub.comments ILIKE '%check-in%' OR
-           r_sub.comments ILIKE '%helpful%')
-    GROUP BY
-        l_sub.host_id
-    HAVING
-        COUNT(r_sub.id) > 5
-)
-        
-SELECT
-    l.neighbourhood_cleansed,
-    l.bedrooms,
-    ROUND(AVG(ri.scores_rating::NUMERIC) FILTER (WHERE hgi.host_id IS NOT NULL), 2) AS avg_rating_good_interaction_hosts,
-    ROUND(AVG(l.price::NUMERIC) FILTER (WHERE hgi.host_id IS NOT NULL), 2) AS avg_price_good_interaction_hosts,
-    COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NOT NULL) AS count_listings_good_interaction_hosts,
+      WITH HostsWithGoodInteraction AS (
+          SELECT DISTINCT
+            l_sub.host_id
+          FROM
+              reviews r_sub
+                  JOIN
+              listings l_sub ON r_sub.listing_id = l_sub.id
+          WHERE
+              r_sub.sentiment = 'Positive'
+            AND (r_sub.comments ILIKE '%communication%' OR
+                r_sub.comments ILIKE '%responsive%' OR
+                r_sub.comments ILIKE '%check-in%' OR
+                r_sub.comments ILIKE '%helpful%')
+          GROUP BY
+              l_sub.host_id
+          HAVING
+              COUNT(r_sub.id) > 5
+      )
+              
+      SELECT
+          l.neighbourhood_cleansed,
+          l.bedrooms,
+          ROUND(AVG(ri.scores_rating::NUMERIC) FILTER (WHERE hgi.host_id IS NOT NULL), 2) AS avg_rating_good_interaction_hosts,
+          ROUND(AVG(l.price::NUMERIC) FILTER (WHERE hgi.host_id IS NOT NULL), 2) AS avg_price_good_interaction_hosts,
+          COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NOT NULL) AS count_listings_good_interaction_hosts,
 
-    ROUND(AVG(ri.scores_rating::NUMERIC) FILTER (WHERE hgi.host_id IS NULL), 2) AS avg_rating_other_hosts,
-    ROUND(AVG(l.price::NUMERIC) FILTER (WHERE hgi.host_id IS NULL), 2) AS avg_price_other_hosts,
-    COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NULL) AS count_listings_other_hosts
-FROM
-    listings l
-        JOIN
-    review_info ri ON l.id = ri.id
-        LEFT JOIN
-        HostsWithGoodInteraction hgi ON l.host_id = hgi.host_id
-WHERE
-    l.bedrooms IS NOT NULL AND ri.scores_rating IS NOT NULL
-GROUP BY
-    l.neighbourhood_cleansed,
-    l.bedrooms
-HAVING 
-   COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NOT NULL) > 0
-   AND COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NULL) > 0
-ORDER BY
-    l.neighbourhood_cleansed,
-    l.bedrooms
-LIMIT $1
-OFFSET $2;
+          ROUND(AVG(ri.scores_rating::NUMERIC) FILTER (WHERE hgi.host_id IS NULL), 2) AS avg_rating_other_hosts,
+          ROUND(AVG(l.price::NUMERIC) FILTER (WHERE hgi.host_id IS NULL), 2) AS avg_price_other_hosts,
+          COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NULL) AS count_listings_other_hosts
+      FROM
+          listings l
+              JOIN
+          review_info ri ON l.id = ri.id
+              LEFT JOIN
+              HostsWithGoodInteraction hgi ON l.host_id = hgi.host_id
+      WHERE
+          l.bedrooms IS NOT NULL AND ri.scores_rating IS NOT NULL
+      GROUP BY
+          l.neighbourhood_cleansed,
+          l.bedrooms
+      HAVING 
+        COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NOT NULL) > 0
+        AND COUNT(DISTINCT l.id) FILTER (WHERE hgi.host_id IS NULL) > 0
+      ORDER BY
+          l.neighbourhood_cleansed,
+          l.bedrooms
+      LIMIT $1
+      OFFSET $2;
   `,
     [pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -521,13 +534,21 @@ OFFSET $2;
 // Route: GET /hosts/verified
 const getHostVerified = wrapAsync(async function (req, res) {
   // Validate only_verified parameter
-  const onlyVerifiedValidation = validateParam(req.query.only_verified, 'boolean');
+  const onlyVerifiedValidation = validateParam(
+    req.query.only_verified,
+    "boolean"
+  );
   if (req.query.only_verified && !onlyVerifiedValidation.isValid) {
-    return res.status(400).json({ error: `Only verified parameter invalid: ${onlyVerifiedValidation.message}` });
+    return res
+      .status(400)
+      .json({
+        error: `Only verified parameter invalid: ${onlyVerifiedValidation.message}`,
+      });
   }
 
-  const only_verified = req.query.only_verified === 'true' || req.query.only_verified === '1';
-  
+  const only_verified =
+    req.query.only_verified === "true" || req.query.only_verified === "1";
+
   connection.query(
     `
 SELECT
@@ -545,7 +566,9 @@ ORDER BY
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -635,26 +658,52 @@ ORDER BY
 // Finds hosts who consistently deliver high-quality experiences across their entire portfolio
 const getHighPerformerHosts = wrapAsync(async function (req, res) {
   // Validate parameters
-  const minListingsValidation = validateParam(req.query.min_listings, 'number', { min: 1 });
+  const minListingsValidation = validateParam(
+    req.query.min_listings,
+    "number",
+    { min: 1 }
+  );
   if (req.query.min_listings && !minListingsValidation.isValid) {
-    return res.status(400).json({ error: `Minimum listings parameter invalid: ${minListingsValidation.message}` });
+    return res
+      .status(400)
+      .json({
+        error: `Minimum listings parameter invalid: ${minListingsValidation.message}`,
+      });
   }
 
-  const minRatingValidation = validateParam(req.query.min_rating, 'number', { min: 1, max: 5 });
+  const minRatingValidation = validateParam(req.query.min_rating, "number", {
+    min: 1,
+    max: 5,
+  });
   if (req.query.min_rating && !minRatingValidation.isValid) {
-    return res.status(400).json({ error: `Minimum rating parameter invalid: ${minRatingValidation.message}` });
+    return res
+      .status(400)
+      .json({
+        error: `Minimum rating parameter invalid: ${minRatingValidation.message}`,
+      });
   }
 
   // Validate order_by parameter
-  const validOrderByValues = ['host_name', 'total_listings_count', 'average_value_score_across_listings', 'min_listing_rating'];
+  const validOrderByValues = [
+    "host_name",
+    "total_listings_count",
+    "average_value_score_across_listings",
+    "min_listing_rating",
+  ];
   if (req.query.order_by && !validOrderByValues.includes(req.query.order_by)) {
-    return res.status(400).json({ 
-      error: `Order by parameter invalid: must be one of ${validOrderByValues.join(', ')}` 
+    return res.status(400).json({
+      error: `Order by parameter invalid: must be one of ${validOrderByValues.join(
+        ", "
+      )}`,
     });
   }
 
-  const min_listings = req.query.min_listings ? parseFloat(req.query.min_listings) : 3;
-  const min_rating = req.query.min_rating ? parseFloat(req.query.min_rating) : 4.7;
+  const min_listings = req.query.min_listings
+    ? parseFloat(req.query.min_listings)
+    : 3;
+  const min_rating = req.query.min_rating
+    ? parseFloat(req.query.min_rating)
+    : 4.7;
   const order_by = req.query.order_by;
 
   let orderClause;
@@ -717,7 +766,9 @@ ${orderClause};
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -731,5 +782,5 @@ module.exports = {
   getHostTypes,
   getHostInteractions,
   getHostVerified,
-  getHighPerformerHosts
+  getHighPerformerHosts,
 };

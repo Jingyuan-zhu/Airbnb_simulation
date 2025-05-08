@@ -21,7 +21,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *           type: integer
  *           minimum: 1
  *           maximum: 100
- *         description: Number of items per page (default is 10, max 100)
+ *         description: Number of items per page (default is return all)
  *     responses:
  *       200:
  *         description: A list of Airbnb listings
@@ -239,7 +239,7 @@ const getListing = wrapAsync(async function (req, res) {
  *           type: integer
  *           minimum: 1
  *           maximum: 100
- *         description: Number of items per page (default is 10, max 100)
+ *         description: Number of items per page (default is return all)
  *       - in: query
  *         name: name
  *         schema:
@@ -540,7 +540,7 @@ const searchListings = wrapAsync(async function (req, res) {
  *           type: integer
  *           minimum: 1
  *           maximum: 100
- *         description: Number of items per page (default is 10, max 100)
+ *         description: Number of items per page (default is return all)
  *     responses:
  *       200:
  *         description: A list of reviews for the specified listing
@@ -712,6 +712,9 @@ const getMapListings = wrapAsync(async function (req, res) {
   const latMax = req.query.lat_max ? parseFloat(req.query.lat_max) : null;
   const lngMin = req.query.lng_min ? parseFloat(req.query.lng_min) : null;
   const lngMax = req.query.lng_max ? parseFloat(req.query.lng_max) : null;
+  const priceLow = req.query.price_low ? parseFloat(req.query.price_low) : null;
+  const priceHigh = req.query.price_high ? parseFloat(req.query.price_high) : null;
+  const neightbourhood = req.query.neighbourhood || null;
   const limit = req.query.limit ? parseInt(req.query.limit) : 500;
   
   // Validate limit

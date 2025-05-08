@@ -1,4 +1,4 @@
-const { connection, validateParam, wrapAsync } = require('./db');
+const { connection, validateParam, wrapAsync } = require("./db");
 
 /**
  * @swagger
@@ -60,7 +60,9 @@ const getOverview = wrapAsync(async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -129,7 +131,9 @@ const getRoomTypes = wrapAsync(async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -198,14 +202,18 @@ const getRoomTypes = wrapAsync(async function (req, res) {
 const getRoomTypeSentiment = wrapAsync(async function (req, res) {
   // Validate room_type parameter (if provided)
   if (req.query.room_type) {
-    const roomTypeValidation = validateParam(req.query.room_type, 'string');
+    const roomTypeValidation = validateParam(req.query.room_type, "string");
     if (!roomTypeValidation.isValid) {
-      return res.status(400).json({ error: `Room type parameter invalid: ${roomTypeValidation.message}` });
+      return res
+        .status(400)
+        .json({
+          error: `Room type parameter invalid: ${roomTypeValidation.message}`,
+        });
     }
   }
-  
+
   const room_type = req.query.room_type;
-  
+
   let query = `
     SELECT
         l.room_type_simple AS room_type,
@@ -214,16 +222,18 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
     FROM listings l
              JOIN reviews r ON l.id = r.listing_id
     GROUP BY l.room_type_simple
-    ${room_type ? 'HAVING l.room_type_simple = $1' : ''}
+    ${room_type ? "HAVING l.room_type_simple = $1" : ""}
     ORDER BY percent_positive_reviews DESC;
   `;
-  
+
   const params = room_type ? [room_type] : [];
-  
+
   connection.query(query, params, (err, data) => {
     if (err) {
       console.log(err);
-      return res.status(500).json({ error: "Database error. Please try again later." });
+      return res
+        .status(500)
+        .json({ error: "Database error. Please try again later." });
     } else {
       res.json(data.rows || []);
     }
@@ -297,45 +307,53 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
 const getMonthlyPrice = wrapAsync(async function (req, res) {
   // Validate date parameters (if provided)
   if (req.query.after) {
-    const afterValidation = validateParam(req.query.after, 'date');
+    const afterValidation = validateParam(req.query.after, "date");
     if (!afterValidation.isValid) {
-      return res.status(400).json({ error: `After date parameter invalid: ${afterValidation.message}` });
+      return res
+        .status(400)
+        .json({
+          error: `After date parameter invalid: ${afterValidation.message}`,
+        });
     }
   }
-  
+
   if (req.query.before) {
-    const beforeValidation = validateParam(req.query.before, 'date');
+    const beforeValidation = validateParam(req.query.before, "date");
     if (!beforeValidation.isValid) {
-      return res.status(400).json({ error: `Before date parameter invalid: ${beforeValidation.message}` });
+      return res
+        .status(400)
+        .json({
+          error: `Before date parameter invalid: ${beforeValidation.message}`,
+        });
     }
   }
-  
+
   const after = req.query.after || "1900-01-01";
   const before = req.query.before || "2100-01-01";
 
   connection.query(
     `
     SELECT
-    TO_CHAR(r.date, 'YYYY-MM') AS review_month,
-    COUNT(DISTINCT l.id) AS listings_reviewed_count,
-    ROUND(AVG(l.price)::NUMERIC, 2) AS average_price_of_reviewed_listings
-FROM
-    reviews r
-        JOIN
-    listings l ON r.listing_id = l.id
-WHERE
-    l.price IS NOT NULL
-GROUP BY
-    review_month
-    HAVING review_month BETWEEN $1 AND $2
-ORDER BY
-    review_month;
+      TO_CHAR(r.date, 'YYYY-MM') AS review_month,
+      COUNT(DISTINCT l.id) AS listings_reviewed_count,
+      ROUND(AVG(l.price)::NUMERIC, 2) AS average_price_of_reviewed_listings
+    FROM
+      reviews r
+          JOIN
+      listings l ON r.listing_id = l.id
+    WHERE
+        l.price IS NOT NULL
+    GROUP BY
+        review_month
+    ORDER BY
+        review_month;
 `,
-    [after, before],
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -431,13 +449,22 @@ ORDER BY
 const getHiddenGems = wrapAsync(async function (req, res) {
   // Validate min_rating parameter (if provided)
   if (req.query.min_rating) {
-    const minRatingValidation = validateParam(req.query.min_rating, 'number', { min: 1, max: 5 });
+    const minRatingValidation = validateParam(req.query.min_rating, "number", {
+      min: 1,
+      max: 5,
+    });
     if (!minRatingValidation.isValid) {
-      return res.status(400).json({ error: `Minimum rating parameter invalid: ${minRatingValidation.message}` });
+      return res
+        .status(400)
+        .json({
+          error: `Minimum rating parameter invalid: ${minRatingValidation.message}`,
+        });
     }
   }
-  
-  const min_rating = req.query.min_rating ? parseFloat(req.query.min_rating) : 4.8;
+
+  const min_rating = req.query.min_rating
+    ? parseFloat(req.query.min_rating)
+    : 4.8;
 
   connection.query(
     `
@@ -492,7 +519,9 @@ ORDER BY
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -505,5 +534,5 @@ module.exports = {
   getRoomTypes,
   getRoomTypeSentiment,
   getMonthlyPrice,
-  getHiddenGems
+  getHiddenGems,
 };

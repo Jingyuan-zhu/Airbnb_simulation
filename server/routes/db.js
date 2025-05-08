@@ -88,6 +88,8 @@ const validateParam = (param, type, options = {}) => {
  * @returns {object|false} - Object with page, pageSize and offset if valid, false if invalid
  */
 const validatePagination = (query, res) => {
+  const DEFAULT_PAGE_SIZE = 10000000;
+  const DEFAULT_PAGE = 1;
   // Validate page parameter
   const pageValidation = validateParam(query.page, 'number', { min: 1 });
   if (query.page && !pageValidation.isValid) {
@@ -104,7 +106,7 @@ const validatePagination = (query, res) => {
 
   // Set default values and calculate offset
   const page = query.page ? parseInt(query.page) : 1;
-  const pageSize = query.page_size ? parseInt(query.page_size) : 10;
+  const pageSize = query.page_size ? parseInt(query.page_size) : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
 
   return { page, pageSize, offset };
