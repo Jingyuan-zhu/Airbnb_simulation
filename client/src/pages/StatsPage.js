@@ -15,6 +15,7 @@ import {
   TableRow,
   CircularProgress,
   Alert,
+  Menu,
 } from "@mui/material";
 import NeighbourhoodVisualization from "../components/map/NeighbourhoodVisualization";
 
@@ -89,7 +90,7 @@ export default function StatsPage() {
         <Typography variant="h4" component="h1" gutterBottom>
           London Airbnb Neighbourhood Analysis
         </Typography>
-        <Typography variant="body1" paragraph>
+        <Typography variant="body1">
           Analyze host performance across London neighbourhoods. Compare Superhosts vs Non-Superhosts.
         </Typography>
 
@@ -110,6 +111,9 @@ export default function StatsPage() {
               onChange={(e) => setSelectedNeighbourhood(e.target.value)}
               value={selectedNeighbourhood}
             >
+              <MenuItem key="All" value="All">
+                All Neighbourhoods
+              </MenuItem>
               {neighbourhoods.map((n) => (
                 <MenuItem key={n.neighbourhood} value={n.neighbourhood}>
                   {n.neighbourhood}
