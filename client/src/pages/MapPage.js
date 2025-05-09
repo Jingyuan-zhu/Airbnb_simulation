@@ -23,10 +23,8 @@ export default function MapPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterVisible, setFilterVisible] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({});
   const [neighbourhoods, setNeighbourhoods] = useState([]);
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState("All");
-  const [prevNeighbourhood, setPrevNeighbourhood] = useState("All");
   const [mapBounds, setMapBounds] = useState(null); // holds current map bounding box (lat/lng limits)
   const [neighbourhoodChanged, setNeighbourhoodChanged] = useState(false);
 
@@ -48,20 +46,20 @@ export default function MapPage() {
     
     // Determine how many listings to fetch and which to keep
     let survivors = [];
-    let stillNeeded = 100;
+    let stillNeeded = 300;
     
-    // Only keep existing listings if neighbourhood hasn't changed
-    if (!neighbourhoodChanged) {
-      survivors = listings.filter((l) => isWithinBounds(l, mapBounds));
-      stillNeeded = Math.max(0, 100 - survivors.length);
+    // // Only keep existing listings if neighbourhood hasn't changed
+    // if (!neighbourhoodChanged) {
+    //   survivors = listings.filter((l) => isWithinBounds(l, mapBounds));
+    //   stillNeeded = Math.max(0, 300 - survivors.length);
       
-      // If we have enough listings, just show them and avoid the API call
-      if (stillNeeded === 0) {
-        setListings(survivors);
-        setLoading(false);
-        return;
-      }
-    }
+    //   // If we have enough listings, just show them and avoid the API call
+    //   if (stillNeeded === 0) {
+    //     setListings(survivors);
+    //     setLoading(false);
+    //     return;
+    //   }
+    // }
 
     let apiUrl =
       `http://${config.server_host}:${config.server_port}` +
@@ -79,13 +77,6 @@ export default function MapPage() {
       apiUrl += `&neighbourhood=${encodeURIComponent(selectedNeighbourhood)}`;
     }
 
-    // Include any additional active filters from state
-    Object.entries(activeFilters).forEach(([key, value]) => {
-      if (value !== "") {
-        apiUrl += `&${key}=${encodeURIComponent(value)}`;
-      }
-    });
-
     console.log("Fetching listings with URL:", apiUrl);
     fetch(apiUrl)
       .then((res) => {
@@ -95,25 +86,25 @@ export default function MapPage() {
       .then((data) => {
         // If neighbourhood changed, only use the new data
         if (neighbourhoodChanged) {
-          setListings(data.slice(0, 100));
+          setListings(data.slice(0, 300));
           setLoading(false);
           return;
         }
         
-        // Otherwise deduplicate listings by ID (normal case)
-        const merged = [...survivors, ...data];
-        const uniq = [];
-        const seen = new Set();
-        for (const row of merged) {
-          const id = row.id;
-          if (!seen.has(id)) {
-            seen.add(id);
-            uniq.push(row);
-          }
-          if (uniq.length === 100) break;
-        }
+        // // Otherwise deduplicate listings by ID (normal case)
+        // const merged = [...survivors, ...data];
+        // const uniq = [];
+        // const seen = new Set();
+        // for (const row of merged) {
+        //   const id = row.id;
+        //   if (!seen.has(id)) {
+        //     seen.add(id);
+        //     uniq.push(row);
+        //   }
+        //   if (uniq.length === 300) break;
+        // }
         setNeighbourhoodChanged(false); // Reset the flag after fetching
-        setListings(uniq);
+        setListings(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -121,7 +112,7 @@ export default function MapPage() {
         setError("Failed to load listings. Please try again later."); // handle errors gracefully
         setLoading(false);
       });
-  }, [selectedNeighbourhood, prevNeighbourhood, activeFilters, mapBounds, listings, isWithinBounds]);
+  }, [selectedNeighbourhood, mapBounds, isWithinBounds]);
 
   // Fetch neighbourhood options for the filter dropdown on mount
   useEffect(() => {
