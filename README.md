@@ -12,6 +12,6 @@ To start the application, `cd` into both `client` and `server` folders. Run `npm
 and backend servers. The frontend server will be started at `localhost:3000` and the backend server will be started at `localhost:8080` by default. You can modify the
 port listened for the frontend or backend server by changing the port in `config.json` in the corresponding folder.
 
-The API docs are served via Swagger at http://localhost:8080/api-docs/
+The API docs are served via Swagger at `http://localhost:8080/api-docs/`
 
 
