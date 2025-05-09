@@ -19,13 +19,16 @@ const { connection, wrapAsync } = require('./db');
  *                 total_listings:
  *                   type: integer
  *                   description: Total number of listings in the database
+ *                   example: 23456
  *                 avg_price:
  *                   type: number
  *                   format: float
  *                   description: Average price of all listings
+ *                   example: 125.75
  *                 total_neighborhoods:
  *                   type: integer
  *                   description: Total number of unique neighborhoods
+ *                   example: 34
  *       500:
  *         description: Database error
  *         content:

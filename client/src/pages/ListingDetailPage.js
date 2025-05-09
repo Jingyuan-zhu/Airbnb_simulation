@@ -23,21 +23,19 @@ export default function ListingDetailPage() {
       `http://${config.server_host}:${config.server_port}/listings/${listing_id}`
     )
       .then((res) => res.json())
-      // .then((data) => {
-      //   // Format the listing data
-      //   const formattedData = {
-      //     ...data,
-      //     price: data.price.toLocaleString(),
-      //     host_response_rate: data.host_response_rate
-      //       ? `${data.host_response_rate}%`
-      //       : "N/A",
-      //     bathrooms_text: data.bathrooms_text || "N/A",
-      //     host_since: data.host_since || "N/A",
-      //     number_of_reviews: data.number_of_reviews || 0,
-      //     review_scores_rating: data.review_scores_rating || 0,
-      //   };
-      //   return formattedData;
-      // })
+      .then((data) => {
+        // Format the listing data
+        const formattedData = {
+          ...data,
+          response_rate: data.response_rate
+            ? `${data.response_rate * 100}%`
+            : "N/A",
+          acceptance_rate: data.acceptance_rate
+            ? `${data.acceptance_rate * 100}%`
+            : "N/A",
+        };
+        return formattedData;
+      })
       .then((data) => setListing(data));
   }, [listing_id]);
 
@@ -46,12 +44,44 @@ export default function ListingDetailPage() {
     {
       field: "date",
       headerName: "Date",
-      width: 150,
+      renderCell: (row) => {
+        // Format the date nicely
+        const dateObj = new Date(Date.parse(row.date));
+        return dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      },
+    },
+    {
+      field: "reviewer_name",
+      headerName: "Reviewer",
     },
     {
       field: "comments",
       headerName: "Review",
-      width: 650,
+      renderCell: (row) => {
+        return <Typography maxWidth={"40vw"}>{row.comments}</Typography>;
+      },
+    },
+    {
+      field: "sentiment",
+      headerName: "Review Sentiment",
+      renderCell: (row) => {
+        // Display sentiment with appropriate color
+        const sentimentStyles = {
+          Positive: { color: "#4caf50", fontWeight: "bold" },
+          Neutral: { color: "#ff9800", fontWeight: "bold" },
+          Negative: { color: "#f44336", fontWeight: "bold" },
+        };
+
+        return (
+          <Typography style={sentimentStyles[row.sentiment] || {}}>
+            {row.sentiment || "Unknown"}
+          </Typography>
+        );
+      },
     },
   ];
 
@@ -71,13 +101,28 @@ export default function ListingDetailPage() {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Listing Details */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, mb: 3 }}>
+        {/* Main Image */}
+        <Grid item size={{ xs: 12, md: 12 }}>
+          <Box
+            component="img"
+            src={listing.picture_url}
+            alt={listing.name}
+            sx={{
+              width: "100%", // fill the width of the grid column
+              maxHeight: "40vh",  
+              objectFit: "cover", // crop instead of squeeze
+              borderRadius: 2, // subtle rounded corners
+            }}
+          />
+        </Grid>
+
+        {/* About this listing */}
+        <Grid item size={{ xs: 12, md: 8.5 }}>
+          <Paper sx={{ p: 3, mb: 3, height: "100%" }}>
             <Typography variant="h6" gutterBottom>
               About this listing
             </Typography>
-            <Typography variant="body1" paragraph>
+            <Typography variant="body1">
               {listing.description || "No description available."}
             </Typography>
 
@@ -96,7 +141,9 @@ export default function ListingDetailPage() {
                 <Typography variant="subtitle1" color="text.secondary">
                   Room Type
                 </Typography>
-                <Typography variant="body1">{listing.room_type}</Typography>
+                <Typography variant="body1">
+                  {listing.room_type_simple}
+                </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle1" color="text.secondary">
@@ -111,7 +158,7 @@ export default function ListingDetailPage() {
                   Bathrooms
                 </Typography>
                 <Typography variant="body1">
-                  {listing.bathrooms_text || "N/A"}
+                  {listing.bathrooms || "N/A"}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
@@ -130,94 +177,97 @@ export default function ListingDetailPage() {
               </Grid>
             </Grid>
           </Paper>
-
-          {/* Reviews Section */}
-          {/* <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Reviews ({listing.number_of_reviews})
-            </Typography>
-            {listing.number_of_reviews > 0 ? (
-              <LazyTable
-                route={`http://${config.server_host}:${config.server_port}/${listing_id}/reviews`}
-                columns={reviewColumns}
-                defaultPageSize={5}
-                rowsPerPageOptions={[5, 10, 25]}
-              />
-            ) : (
-              <Typography variant="body1">
-                No reviews available for this listing.
-              </Typography>
-            )}
-          </Paper> */}
         </Grid>
-
-        {/* Price and Availability */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h5" color="primary" gutterBottom>
-              £{listing.price}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              per night
-            </Typography>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Box sx={{ mb: 2 }}>
+        {/* Price and Host Information */}
+        <Grid item size={{ xs: 12, md: 3.5 }}>
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              borderLeft: "4px solid #1976d2",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box>
               <Typography
-                variant="subtitle1"
-                color="text.secondary"
+                variant="h5"
+                color="primary"
+                fontWeight="bold"
                 gutterBottom
               >
-                Availability
+                £{listing.price}
               </Typography>
-              <Typography variant="body1">
-                {listing.availability_365 === 0
-                  ? "Not available"
-                  : `Available for ${listing.availability_365} days in the year`}
-              </Typography>
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="subtitle1"
-                color="text.secondary"
-                gutterBottom
-              >
-                Minimum Stay
-              </Typography>
-              <Typography variant="body1">
-                {listing.minimum_nights} night(s)
-              </Typography>
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="subtitle1"
-                color="text.secondary"
-                gutterBottom
-              >
-                Maximum Stay
-              </Typography>
-              <Typography variant="body1">
-                {listing.maximum_nights} night(s)
+              <Typography variant="body2" color="text.secondary">
+                per night
               </Typography>
             </Box>
           </Paper>
 
+          <Paper
+            sx={{
+              p: 3,
+              borderLeft: listing.is_superhost ? "4px solid #ff9800" : "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                mb: 2,
+              }}
+            >
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                {listing.host_name || "Unknown Host"}
+              </Typography>
+              {listing.is_superhost && (
+                <Chip
+                  label="Superhost"
+                  color="warning"
+                  size="small"
+                  sx={{ fontWeight: "bold" }}
+                />
+              )}
+            </Box>
+
+            <Divider sx={{ mb: 2 }} />
+
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Response Rate
+                </Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {listing.response_rate || "Unknown"}
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Acceptance Rate
+                </Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {listing.acceptance_rate || "Unknown"}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Paper>
+        </Grid>
+
+        {/* Reviews Section */}
+        <Grid item xs={12} md={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-              Host Information
-            </Typography>
             <Typography variant="h6" gutterBottom>
-              {listing.host_name || "Unknown Host"}
+              Reviews
             </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Host since: {listing.host_since || "Unknown"}
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Response rate: {listing.host_response_rate || "Unknown"}
-            </Typography>
+            <LazyTable
+              route={`http://${config.server_host}:${config.server_port}/listings/${listing_id}/reviews`}
+              columns={reviewColumns}
+              defaultPageSize={5}
+              rowsPerPageOptions={[5, 10, 25]}
+            />
           </Paper>
         </Grid>
       </Grid>

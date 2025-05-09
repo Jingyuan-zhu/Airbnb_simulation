@@ -1,4 +1,9 @@
-const { connection, validateParam, wrapAsync } = require("./db");
+const {
+  connection,
+  validateParam,
+  wrapAsync,
+  validatePagination,
+} = require("./db");
 
 /**
  * @swagger
@@ -204,11 +209,9 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
   if (req.query.room_type) {
     const roomTypeValidation = validateParam(req.query.room_type, "string");
     if (!roomTypeValidation.isValid) {
-      return res
-        .status(400)
-        .json({
-          error: `Room type parameter invalid: ${roomTypeValidation.message}`,
-        });
+      return res.status(400).json({
+        error: `Room type parameter invalid: ${roomTypeValidation.message}`,
+      });
     }
   }
 
@@ -255,12 +258,14 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
  *           type: string
  *           format: date
  *         description: Filter results after this date (YYYY-MM-DD format, defaults to 1900-01-01)
+ *         example: "2023-01-01"
  *       - in: query
  *         name: before
  *         schema:
  *           type: string
  *           format: date
  *         description: Filter results before this date (YYYY-MM-DD format, defaults to 2100-01-01)
+ *         example: "2023-12-31"
  *     responses:
  *       200:
  *         description: Monthly price trends over time
@@ -274,13 +279,16 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
  *                   review_month:
  *                     type: string
  *                     description: Month in YYYY-MM format
+ *                     example: "2023-01"
  *                   listings_reviewed_count:
  *                     type: integer
  *                     description: Number of listings reviewed in this month
+ *                     example: 245
  *                   average_price_of_reviewed_listings:
  *                     type: number
  *                     format: float
  *                     description: Average price of listings reviewed in this month
+ *                     example: 125.50
  *       400:
  *         description: Invalid date parameters
  *         content:
@@ -290,6 +298,7 @@ const getRoomTypeSentiment = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "After date parameter invalid: Must be a valid date"
  *       500:
  *         description: Database error
  *         content:
@@ -309,22 +318,18 @@ const getMonthlyPrice = wrapAsync(async function (req, res) {
   if (req.query.after) {
     const afterValidation = validateParam(req.query.after, "date");
     if (!afterValidation.isValid) {
-      return res
-        .status(400)
-        .json({
-          error: `After date parameter invalid: ${afterValidation.message}`,
-        });
+      return res.status(400).json({
+        error: `After date parameter invalid: ${afterValidation.message}`,
+      });
     }
   }
 
   if (req.query.before) {
     const beforeValidation = validateParam(req.query.before, "date");
     if (!beforeValidation.isValid) {
-      return res
-        .status(400)
-        .json({
-          error: `Before date parameter invalid: ${beforeValidation.message}`,
-        });
+      return res.status(400).json({
+        error: `Before date parameter invalid: ${beforeValidation.message}`,
+      });
     }
   }
 
@@ -378,6 +383,19 @@ const getMonthlyPrice = wrapAsync(async function (req, res) {
  *           minimum: 1
  *           maximum: 5
  *         description: Minimum rating threshold for hidden gems (default is 4.8)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: page_size
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page (default is to return all)
  *     responses:
  *       200:
  *         description: List of hidden gem listings
@@ -432,6 +450,7 @@ const getMonthlyPrice = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "Minimum rating parameter invalid: Must be at most 5"
  *       500:
  *         description: Database error
  *         content:
@@ -447,6 +466,9 @@ const getMonthlyPrice = wrapAsync(async function (req, res) {
 // Route: GET /analytics/hidden_gems
 // Find highly rated, high-value listings with relatively few reviews and low price compared to neighbourhood norms.
 const getHiddenGems = wrapAsync(async function (req, res) {
+  const pagination = validatePagination(req.query, res);
+
+  const { page, pageSize, offset } = pagination;
   // Validate min_rating parameter (if provided)
   if (req.query.min_rating) {
     const minRatingValidation = validateParam(req.query.min_rating, "number", {
@@ -454,11 +476,9 @@ const getHiddenGems = wrapAsync(async function (req, res) {
       max: 5,
     });
     if (!minRatingValidation.isValid) {
-      return res
-        .status(400)
-        .json({
-          error: `Minimum rating parameter invalid: ${minRatingValidation.message}`,
-        });
+      return res.status(400).json({
+        error: `Minimum rating parameter invalid: ${minRatingValidation.message}`,
+      });
     }
   }
 
@@ -513,9 +533,11 @@ WHERE
   AND ri.number_of_reviews < nra.avg_reviews
   AND l.price < na.avg_price_for_room_type
 ORDER BY
-    l.neighbourhood_cleansed, l.room_type_simple, ri.scores_rating DESC;
+    l.neighbourhood_cleansed, l.room_type_simple, ri.scores_rating DESC
+LIMIT $3 
+OFFSET $4;
 `,
-    [min_rating, min_rating],
+    [min_rating, min_rating, pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);

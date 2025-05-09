@@ -93,7 +93,7 @@ const ListingDetailsPane = ({ listing, onClose }) => {
 
           <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
             <Rating 
-              value={listing.scores_rating ? listing.scores_rating / 5 : 0} 
+              value={listing.scores_rating} 
               precision={0.1} 
               readOnly 
               size="small"

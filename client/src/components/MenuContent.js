@@ -5,6 +5,7 @@ import Stack from "@mui/material/Stack";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import { NavLink } from "react-router-dom";
 import Typography from "@mui/material/Typography";
@@ -14,6 +15,7 @@ const mainListItems = [
   { text: "Neighbourhoods", icon: <AnalyticsRoundedIcon />, route: "/neighbourhood" },
   { text: "Listings", icon: <AnalyticsRoundedIcon />, route: "/listings" },
   { text: "Map", icon: <PeopleRoundedIcon />, route: "/map" },
+  { text: "Top Hosts", icon: <StarRoundedIcon />, route: "/high-performer-hosts" },
 ];
 
 const secondaryListItems = [

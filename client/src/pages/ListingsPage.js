@@ -138,7 +138,7 @@ export default function ListingsPage() {
         />
       ) : (
         <LazyTable 
-          route={`http://${config.server_host}:${config.server_port}/analytics/hidden_gems?min_rating=4.8`} 
+          route={`http://${config.server_host}:${config.server_port}/analytics/hidden_gems`} 
           columns={hiddenGemsColumns}
           defaultPageSize={10}
           rowsPerPageOptions={[10, 25, 50]}
