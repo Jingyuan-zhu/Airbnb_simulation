@@ -16,14 +16,14 @@ for the backend server.
 
 To start the application, `cd` into both `client` and `server` folders. 
 
-Run `npm install` to install dependencies first and then run `npm start` to start the frontend
+Run `npm install` (in both frontend and backend) to install dependencies first and then run `npm start` to start the frontend
 and backend servers. The frontend server will be started at `localhost:3000` and the backend server will be started at `localhost:8080` by default. 
 
-You can modify the
-port listened for the frontend or backend server by changing the port in `config.json` in the corresponding folder.
+You can modify the port listened for the frontend or backend server by changing the port in `config.json` in the corresponding folder.
 
-To view the API docs, go to `localhost:8080/api-docs`
+The API docs are served via Swagger at `http://localhost:8080/api-docs/`
 
 
 #### Data cleaning and processing
 The data cleaning code is in ```CIS5500_Data_Cleaning.ipynb``` and the sentiment analysis code for review classification is in ```improved_sentiment.py```
+
