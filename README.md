@@ -8,6 +8,10 @@ This is the repository of the our CIS 5500 final project, Airbnb Explorer. Our a
 while `improved_sentiment.py` is the code for sentimental analysis. `client` folder contains the code for the frontend server, and `server` folder contains the code
 for the backend server.
 
-To start the application, `cd` into both `client` and `server` folders. Run `npm install` to install dependencies first and then run `npm start` to start the frontend
+To start the application, `cd` into both `client` and `server` folders. Run `npm install` (in both frontend and backend) to install dependencies first and then run `npm start` to start the frontend
 and backend servers. The frontend server will be started at `localhost:3000` and the backend server will be started at `localhost:8080` by default. You can modify the
 port listened for the frontend or backend server by changing the port in `config.json` in the corresponding folder.
+
+The API docs are served via Swagger at http://localhost:8080/api-docs/
+
+
