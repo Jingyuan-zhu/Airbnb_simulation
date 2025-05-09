@@ -1,0 +1,77 @@
+Listings Table:
+CREATE TABLE listings (
+    id BIGINT PRIMARY KEY,
+    host_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    picture_url VARCHAR(255),
+    neighbourhood_cleansed VARCHAR(100) NOT NULL,
+    latitude FLOAT NOT NULL,
+    longitude FLOAT NOT NULL,
+    accommodates INTEGER NOT NULL,
+    bathrooms FLOAT NOT NULL,
+    bedrooms FLOAT NOT NULL,
+    beds FLOAT NOT NULL,
+    price FLOAT NOT NULL,
+    room_type_simple VARCHAR(50) NOT NULL,
+    FOREIGN KEY (host_id) REFERENCES host(host_id)
+);
+	Primary Key: 
+id
+Functional Dependencies:
+id → {host_id, name, description, picture_url, neighbourhood_cleansed, latitude, longitude, accommodates, bathrooms, bedrooms, beds, price, room_type_simple}
+Hosts Table:
+CREATE TABLE host (
+    host_id BIGINT PRIMARY KEY,
+    host_name VARCHAR(255) NOT NULL,
+    response_time VARCHAR(50),
+    response_rate FLOAT,
+    acceptance_rate FLOAT,
+    is_superhost BOOLEAN,
+    total_listings_count FLOAT NOT NULL,
+    identity_verified BOOLEAN NOT NULL,
+    listings_count_entire_homes INTEGER NOT NULL,
+    listings_count_private_rooms INTEGER NOT NULL,
+    listings_count_shared_rooms INTEGER NOT NULL,
+    years_experience FLOAT NOT NULL
+);
+Primary Key:
+host_id
+Functional Dependences: 
+host_id → {host_name, response_time, response_rate, acceptance_rate, is_superhost, total_listings_count, identity_verified, listings_count, listings_count_entire_homes, listings_count_private_rooms, listings_count_shared_rooms, years_experience}
+Review_info Table:
+CREATE TABLE review_info (
+    id BIGINT PRIMARY KEY,
+    number_of_reviews INTEGER NOT NULL,
+    number_of_reviews_ltm INTEGER NOT NULL,
+    number_of_reviews_l30d INTEGER NOT NULL,
+    scores_rating FLOAT,
+    scores_accuracy FLOAT,
+    scores_cleanliness FLOAT,
+    scores_checkin FLOAT,
+    scores_communication FLOAT,
+    scores_location FLOAT,
+    scores_value FLOAT,
+    reviews_per_month FLOAT,
+    FOREIGN KEY (id) REFERENCES listings(id)
+);
+Primary Key: 
+id
+Functional Dependences: 
+id → {number_of_reviews, number_of_reviews_ltm, number_of_reviews_l30d, scores_rating, scores_accuracy, scores_cleanliness, scores_checkin, scores_communication, scores_location, scores_value, reviews_per_month}
+Reviews Table:
+CREATE TYPE sentiment_type AS ENUM ('Positive', 'Neutral', 'Negative');
+CREATE TABLE reviews (
+    listing_id BIGINT NOT NULL, 
+    id BIGINT PRIMARY KEY,
+    date DATE NOT NULL,
+    reviewer_id BIGINT NOT NULL,
+    reviewer_name VARCHAR(255) NOT NULL,
+    comments TEXT NOT NULL,
+   sentiment sentiment_type NOT NULL,	
+   FOREIGN KEY (listing_id) REFERENCES listings(id)
+);
+Primary Key: 
+id
+Functional Dependencies: 
+id → {listing_id, date, reviewer_id, reviewer_name, comments}

@@ -1,57 +1,38 @@
-import { AppBar, Container, Toolbar, Typography, Box, Button } from '@mui/material'
-import { NavLink } from 'react-router-dom';
-
-// The hyperlinks in the NavBar contain a lot of repeated styling code so a higher-order
-// component is used here to simplify the code. The href is the page to navigate to and children
-// is the text to display for the link.
-const NavText = ({ href, children }) => {
-  return (
-    <Typography
-      variant='button'
-      component={NavLink}
-      to={href}
-      sx={{
-        color: 'white',
-        textDecoration: 'none',
-        marginX: 2,
-        '&:hover': {
-          textDecoration: 'underline',
-        },
-      }}
-    >
-      {children}
-    </Typography>
-  );
-};
+import {
+  AppBar,
+  Container,
+  Stack,
+  Typography,
+  Box,
+  Button,
+  ButtonBase,
+} from "@mui/material";
+import MenuContent from "./MenuContent";
 
 // The NavBar component uses MUI's AppBar component as the foundation.
 // The component will be displayed on the top of the page.
 // NavBar contains links to navigate to all pages in the application.
 export default function NavBar() {
   return (
-    <AppBar position='static'>
-      <Container maxWidth='xl'>
-        <Toolbar disableGutters>
-          <Typography
-            variant='h6'
-            component={NavLink}
-            to='/'
-            sx={{
-              color: 'white',
-              textDecoration: 'none',
-              marginRight: 3,
-              fontWeight: 'bold',
-              fontSize: 24,
-            }}
-          >
-            Airbnb Explorer
-          </Typography>
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            <NavText href='/'>Home</NavText>
-            <NavText href='/listings'>Listings</NavText>
-            <NavText href='/map'>Map</NavText>
+    <AppBar position="static" sx={{ bgcolor: "info.light", p: 0, m: 0 }}>
+      <Container maxWidth="xl">
+        <Stack direction={"row"} sx={{ alignItems: "center" }}>
+          <ButtonBase href="/">
+            <Box pr={0.5}>
+              <img src="/Airbnb-Logo.png" alt="Logo" height="60px" />
+            </Box>
+            <Typography
+              variant="h6"
+              to="/"
+              sx={{ color: "text.primary", py: 2, pr: 1 }}
+            >
+              Explorer
+            </Typography>
+          </ButtonBase>
+          <Box sx={{ display: "flex", flexGrow: 1, alignItems: "center" }}>
+            <MenuContent />
           </Box>
-        </Toolbar>
+        </Stack>
       </Container>
     </AppBar>
   );

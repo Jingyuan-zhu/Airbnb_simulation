@@ -1,36 +1,33 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CssBaseline, ThemeProvider } from '@mui/material'
-import { indigo, amber } from '@mui/material/colors'
-import { createTheme } from "@mui/material/styles";
+import { CssBaseline } from "@mui/material";
 
-import NavBar from './components/NavBar';
-import HomePage from './pages/HomePage';
-import ListingsPage from './pages/ListingsPage';
-import ListingDetailPage from './pages/ListingDetailPage';
-import MapPage from './pages/MapPage';
+import NavBar from "./components/NavBar";
+import HomePage from "./pages/HomePage";
+import ListingsPage from "./pages/ListingsPage";
+import ListingDetailPage from "./pages/ListingDetailPage";
+import MapPage from "./pages/MapPage";
+import StatsPage from "./pages/StatsPage";
 
-// Create theme with indigo as primary color
-export const theme = createTheme({
-  palette: {
-    primary: indigo,
-    secondary: amber,
-  },
-});
+import Dashboard from "./pages/Dashboard";
+import AppTheme from "./theme/AppTheme";
+
 
 // App is the root component of our application with our page routes
 export default function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <AppTheme>
+      <CssBaseline enableColorScheme />
       <BrowserRouter>
         <NavBar />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/stats" element={<StatsPage />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
-    </ThemeProvider>
+    </AppTheme>
   );
 }
