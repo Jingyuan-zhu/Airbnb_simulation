@@ -21,7 +21,7 @@ export default function App() {
         <NavBar />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/neighbourhood" element={<StatsPage />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
           <Route path="/map" element={<MapPage />} />

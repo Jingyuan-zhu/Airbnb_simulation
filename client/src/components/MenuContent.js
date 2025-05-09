@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 
 const mainListItems = [
   { text: "Home", icon: <HomeRoundedIcon />, route: "/" },
-  { text: "Neighbourhoods", icon: <AnalyticsRoundedIcon />, route: "/stats" },
+  { text: "Neighbourhoods", icon: <AnalyticsRoundedIcon />, route: "/neighbourhood" },
   { text: "Listings", icon: <AnalyticsRoundedIcon />, route: "/listings" },
   { text: "Map", icon: <PeopleRoundedIcon />, route: "/map" },
 ];

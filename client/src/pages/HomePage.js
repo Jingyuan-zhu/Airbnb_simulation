@@ -12,6 +12,7 @@ export default function HomePage() {
   const [roomTypeData, setRoomTypeData] = useState([]);
   const [sentimentData, setSentimentData] = useState([]);
   const [priceData, setPriceData] = useState([]);
+  const [verifiedHostData, setVerifiedHostData] = useState([]);
   const [error, setError] = useState(null);
   const [priceError, setPriceError] = useState(null);
 
@@ -97,6 +98,28 @@ export default function HomePage() {
       .catch(err => {
         console.error('Error fetching monthly price data:', err);
         setPriceError('Unable to load monthly price data');
+      });
+
+    // Fetch verified host data from the /hosts/verified API
+    fetch(`http://${config.server_host}:${config.server_port}/hosts/verified`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Verified Host Data:', data);
+        const formattedData = data.map((item, index) => ({
+          id: index,
+          value: parseFloat(item.percentage_of_total),
+          label: item.identity_verified ? 'Verified' : 'Unverified',
+          color: ['#36A2EB', '#FF6384'][index % 2]
+        }));
+        console.log('Formatted Verified Host Data:', formattedData);
+        setVerifiedHostData(formattedData);
+      })
+      .catch(err => {
+        console.error('Error fetching verified host data:', err);
+        setError('Unable to load verified host data');
       });
   }, []);
 
@@ -191,15 +214,15 @@ export default function HomePage() {
       <Divider sx={{ my: 3 }} />
 
       <Typography variant="h5" gutterBottom>
-        Room Type Statistics
+        Key Statistics
       </Typography>
 
       <Typography variant="body1" paragraph>
-        Explore key statistics about Airbnb listings in London, including room type distributions and guest sentiment based on positive reviews.
+        Explore key statistics about Airbnb listings in London, including room type distributions, guest sentiment based on positive reviews, and host verification status.
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', height: 400 }}>
             <Typography variant="h6" gutterBottom>
               Room Type Distribution (%)
@@ -235,7 +258,7 @@ export default function HomePage() {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', height: 400 }}>
             <Typography variant="h6" gutterBottom>
               Room Type Sentiment
@@ -268,6 +291,42 @@ export default function HomePage() {
                     max: 100,
                   },
                 ]}
+                margin={{ top: 0, bottom: 0, left: 0, right: 0 }}
+                height={300}
+              />
+            ) : (
+              <Typography>Loading...</Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', height: 400 }}>
+            <Typography variant="h6" gutterBottom>
+              Host Verification Status (%)
+            </Typography>
+            {error ? (
+              <Typography color="error">{error}</Typography>
+            ) : verifiedHostData.length > 0 ? (
+              <PieChart
+                series={[
+                  {
+                    data: verifiedHostData,
+                    innerRadius: 30,
+                    outerRadius: 120,
+                    paddingAngle: 0,
+                    cornerRadius: 5,
+                    cx: 150,
+                    cy: 150,
+                  },
+                ]}
+                slotProps={{
+                  legend: {
+                    direction: 'row',
+                    position: { vertical: 'bottom', horizontal: 'middle' },
+                    padding: 0,
+                  },
+                }}
                 margin={{ top: 0, bottom: 0, left: 0, right: 0 }}
                 height={300}
               />
