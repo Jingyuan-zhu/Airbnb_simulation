@@ -431,6 +431,220 @@ OFFSET ${offset};
   });
 }
 
+// Route: GET /listings/map
+const map_listings = async function(req, res) {
+  const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+  
+  connection.query(`
+    SELECT 
+      id,
+      name,
+      latitude,
+      longitude,
+      price,
+      room_type,
+      neighbourhood_cleansed as neighbourhood
+    FROM listings
+    WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    LIMIT ${limit}
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route: GET /hosts/verified
+const host_verified = async function(req, res) {
+  connection.query(`
+    SELECT 
+      host_id,
+      host_name,
+      host_since,
+      host_is_superhost,
+      host_identity_verified
+    FROM host
+    WHERE host_identity_verified = true
+    ORDER BY host_since DESC
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route: GET /analytics/room_type_sentiment
+const room_type_sentiment = async function(req, res) {
+  connection.query(`
+    SELECT 
+      l.room_type_simple as room_type,
+      COUNT(*) as total_reviews,
+      ROUND(AVG(CASE WHEN r.sentiment = 'Positive' THEN 100.0 ELSE 0 END), 2) as percent_positive_reviews
+    FROM listings l
+    JOIN reviews r ON l.id = r.listing_id
+    GROUP BY l.room_type_simple
+    ORDER BY percent_positive_reviews DESC
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route: GET /analytics/monthly_price
+const monthly_price = async function(req, res) {
+  const after = req.query.after ?? "1900-01-01";
+  const before = req.query.before ?? "2100-01-01";
+
+  connection.query(`
+    SELECT
+      TO_CHAR(r.date, 'YYYY-MM') AS review_month,
+      COUNT(DISTINCT l.id) AS listings_reviewed_count,
+      ROUND(AVG(l.price)::NUMERIC, 2) AS average_price_of_reviewed_listings
+    FROM reviews r
+    JOIN listings l ON r.listing_id = l.id
+    WHERE l.price IS NOT NULL
+    GROUP BY review_month
+    HAVING review_month BETWEEN '${after}' AND '${before}'
+    ORDER BY review_month
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route: GET /analytics/hidden_gems
+const hidden_gems = async function(req, res) {
+  const min_rating = req.query.min_rating ?? 4.8;
+
+  connection.query(`
+    WITH NeighbourhoodAverages AS (
+      SELECT
+        neighbourhood_cleansed,
+        room_type_simple,
+        AVG(price) AS avg_price_for_room_type
+      FROM listings
+      WHERE price IS NOT NULL
+      GROUP BY neighbourhood_cleansed, room_type_simple
+    ),
+    NeighbourhoodReviewAvg AS (
+      SELECT
+        l_inner.neighbourhood_cleansed,
+        AVG(ri_inner.number_of_reviews) as avg_reviews
+      FROM review_info ri_inner
+      JOIN listings l_inner ON ri_inner.id = l_inner.id
+      WHERE ri_inner.number_of_reviews IS NOT NULL
+      GROUP BY l_inner.neighbourhood_cleansed
+    )
+    SELECT
+      l.id AS listing_id,
+      l.name AS listing_name,
+      l.neighbourhood_cleansed,
+      l.room_type_simple,
+      ri.scores_rating,
+      ri.scores_value,
+      ri.number_of_reviews,
+      l.price,
+      ROUND(nra.avg_reviews::NUMERIC, 2) AS avg_neighbourhood_reviews,
+      ROUND(na.avg_price_for_room_type::NUMERIC, 2) AS avg_neighbourhood_price_for_room_type
+    FROM listings l
+    JOIN review_info ri ON l.id = ri.id
+    JOIN NeighbourhoodAverages na ON l.neighbourhood_cleansed = na.neighbourhood_cleansed 
+      AND l.room_type_simple = na.room_type_simple
+    JOIN NeighbourhoodReviewAvg nra ON l.neighbourhood_cleansed = nra.neighbourhood_cleansed
+    WHERE
+      ri.scores_rating > ${min_rating}
+      AND ri.scores_value > ${min_rating}
+      AND ri.number_of_reviews IS NOT NULL
+      AND l.price IS NOT NULL
+      AND ri.number_of_reviews < nra.avg_reviews
+      AND l.price < na.avg_price_for_room_type
+    ORDER BY l.neighbourhood_cleansed, l.room_type_simple, ri.scores_rating DESC
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
+// Route: GET /hosts/high-performers
+const high_performer_hosts = async function(req, res) {
+  const min_listings = req.query.min_listings ?? 3;
+  const min_rating = req.query.min_rating ?? 4.7;
+  const order_by = req.query.order_by;
+
+  connection.query(`
+    WITH HostMinRating AS (
+      SELECT
+        l.host_id,
+        MIN(ri.scores_rating) AS min_listing_rating
+      FROM listings l
+      JOIN review_info ri ON l.id = ri.id
+      WHERE ri.scores_rating IS NOT NULL
+      GROUP BY l.host_id
+    ),
+    HostAvgValue AS (
+      SELECT
+        l.host_id,
+        AVG(ri.scores_value) AS avg_value_score
+      FROM listings l
+      JOIN review_info ri ON l.id = ri.id
+      WHERE ri.scores_value IS NOT NULL
+      GROUP BY l.host_id
+    )
+    SELECT
+      h.host_id,
+      h.host_name,
+      h.total_listings_count,
+      ROUND(hav.avg_value_score::NUMERIC, 2) AS average_value_score_across_listings,
+      hmr.min_listing_rating
+    FROM host h
+    JOIN HostMinRating hmr ON h.host_id = hmr.host_id
+    JOIN HostAvgValue hav ON h.host_id = hav.host_id
+    WHERE
+      h.total_listings_count > ${min_listings}
+      AND hmr.min_listing_rating > ${min_rating}
+      AND hav.avg_value_score > ${min_rating}
+    ${(() => {
+      switch (order_by) {
+        case "host_name":
+          return "ORDER BY h.host_name";
+        case "total_listings_count":
+          return "ORDER BY h.total_listings_count DESC";
+        case "average_value_score_across_listings":
+          return "ORDER BY average_value_score_across_listings DESC";
+        case "min_listing_rating":
+          return "ORDER BY min_listing_rating DESC";
+        default:
+          return "ORDER BY h.host_id";
+      }
+    })()}
+  `, (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
+    }
+  });
+}
+
 module.exports = {
   overview,
   experienced,
@@ -443,5 +657,11 @@ module.exports = {
   listing,
   hosts,
   reviews,
-  neighbourhoods
+  neighbourhoods,
+  map_listings,
+  host_verified,
+  room_type_sentiment,
+  monthly_price,
+  hidden_gems,
+  high_performer_hosts
 }

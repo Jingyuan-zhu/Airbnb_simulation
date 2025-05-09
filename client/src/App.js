@@ -7,27 +7,32 @@ import ListingsPage from "./pages/ListingsPage";
 import ListingDetailPage from "./pages/ListingDetailPage";
 import MapPage from "./pages/MapPage";
 import StatsPage from "./pages/StatsPage";
+import Login from "./components/Login";
 
 import Dashboard from "./pages/Dashboard";
 import AppTheme from "./theme/AppTheme";
+import { AuthProvider } from "./context/AuthContext";
 
 
 // App is the root component of our application with our page routes
 export default function App() {
   return (
-    <AppTheme>
-      <CssBaseline enableColorScheme />
-      <BrowserRouter>
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/listings" element={<ListingsPage />} />
-          <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </BrowserRouter>
-    </AppTheme>
+    <AuthProvider>
+      <AppTheme>
+        <CssBaseline enableColorScheme />
+        <BrowserRouter>
+          <NavBar />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/listings" element={<ListingsPage />} />
+            <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </BrowserRouter>
+      </AppTheme>
+    </AuthProvider>
   );
 }
