@@ -1,18 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Typography,
   Grid,
-  Box,
   Paper,
-  CircularProgress,
   Alert,
   Snackbar,
-  FormControlLabel,
-  Switch,
-  TextField,
-  InputAdornment,
-  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -21,8 +14,6 @@ import {
 } from "@mui/material";
 import GoogleMapComponent from "../components/map/GoogleMapComponent";
 import ListingDetailsPane from "../components/map/ListingDetailsPane";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import SearchIcon from "@mui/icons-material/Search";
 
 const config = require("../config.json");
 
@@ -32,54 +23,107 @@ export default function MapPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterVisible, setFilterVisible] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 1000]);
   const [activeFilters, setActiveFilters] = useState({});
   const [neighbourhoods, setNeighbourhoods] = useState([]);
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState("All");
+  const [prevNeighbourhood, setPrevNeighbourhood] = useState("All");
+  const [mapBounds, setMapBounds] = useState(null); // holds current map bounding box (lat/lng limits)
+  const [neighbourhoodChanged, setNeighbourhoodChanged] = useState(false);
 
-  // Fetch listings for the map
+
+  // Check if a listing is inside the current bounds
+  const isWithinBounds = useCallback(
+    (l, bounds) =>
+      !bounds ||
+      (l.latitude >= bounds.lat_min &&
+        l.latitude <= bounds.lat_max &&
+        l.longitude >= bounds.lng_min &&
+        l.longitude <= bounds.lng_max),
+    []
+  );
+
+  // Fetch listings whenever map bounds or filters change
   useEffect(() => {
     setLoading(true);
-
-    // Build the API URL with any active filters
-    let apiUrl = `http://${config.server_host}:${config.server_port}/listings/map?limit=100`;
-
-    // Add price filter if set
-    if (priceRange[0] > 0 || priceRange[1] < 1000) {
-      apiUrl += `&price_low=${priceRange[0]}&price_high=${priceRange[1]}`;
+    
+    // Determine how many listings to fetch and which to keep
+    let survivors = [];
+    let stillNeeded = 100;
+    
+    // Only keep existing listings if neighbourhood hasn't changed
+    if (!neighbourhoodChanged) {
+      survivors = listings.filter((l) => isWithinBounds(l, mapBounds));
+      stillNeeded = Math.max(0, 100 - survivors.length);
+      
+      // If we have enough listings, just show them and avoid the API call
+      if (stillNeeded === 0) {
+        setListings(survivors);
+        setLoading(false);
+        return;
+      }
     }
 
-    // Add neighbourhood filter if selected
-    if (selectedNeighbourhood) {
-      apiUrl += `&neighbourhood=${selectedNeighbourhood}`;
+    let apiUrl =
+      `http://${config.server_host}:${config.server_port}` +
+      `/listings/map?limit=${stillNeeded}`;
+
+    // Include viewport bounds if available (to fetch only listings in view)
+    if (mapBounds) {
+      apiUrl +=
+        `&lat_min=${mapBounds.lat_min}&lat_max=${mapBounds.lat_max}` +
+        `&lng_min=${mapBounds.lng_min}&lng_max=${mapBounds.lng_max}`;
     }
 
-    // Add other active filters
+    // Include neighbourhood filter if one is selected (not "All")
+    if (selectedNeighbourhood && selectedNeighbourhood !== "All") {
+      apiUrl += `&neighbourhood=${encodeURIComponent(selectedNeighbourhood)}`;
+    }
+
+    // Include any additional active filters from state
     Object.entries(activeFilters).forEach(([key, value]) => {
       if (value !== "") {
         apiUrl += `&${key}=${encodeURIComponent(value)}`;
       }
     });
 
+    console.log("Fetching listings with URL:", apiUrl);
     fetch(apiUrl)
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to fetch listings");
-        }
+        if (!res.ok) throw new Error("Failed to fetch listings");
         return res.json();
       })
       .then((data) => {
-        setListings(data);
+        // If neighbourhood changed, only use the new data
+        if (neighbourhoodChanged) {
+          setListings(data.slice(0, 100));
+          setLoading(false);
+          return;
+        }
+        
+        // Otherwise deduplicate listings by ID (normal case)
+        const merged = [...survivors, ...data];
+        const uniq = [];
+        const seen = new Set();
+        for (const row of merged) {
+          const id = row.id;
+          if (!seen.has(id)) {
+            seen.add(id);
+            uniq.push(row);
+          }
+          if (uniq.length === 100) break;
+        }
+        setNeighbourhoodChanged(false); // Reset the flag after fetching
+        setListings(uniq);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching listings:", err);
-        setError("Failed to load listings. Please try again later.");
+        setError("Failed to load listings. Please try again later."); // handle errors gracefully
         setLoading(false);
       });
-  }, [priceRange, selectedNeighbourhood, activeFilters]);
+  }, [selectedNeighbourhood, prevNeighbourhood, activeFilters, mapBounds, listings, isWithinBounds]);
 
-  // Fetch neighbourhoods for filtering
+  // Fetch neighbourhood options for the filter dropdown on mount
   useEffect(() => {
     fetch(`http://${config.server_host}:${config.server_port}/neighbourhoods`)
       .then((res) => res.json())
@@ -87,52 +131,29 @@ export default function MapPage() {
       .catch((err) => console.error("Error fetching neighbourhoods:", err));
   }, []);
 
-  // Handle marker click to show listing details
+  // When a map marker is clicked, show details
   const handleMarkerClick = (listing) => {
     setSelectedListing(listing);
   };
-
-  // Close the details pane
+  // Close the listing details pane
   const handleCloseDetails = () => {
     setSelectedListing(null);
   };
-
-  // Handle price range change
-  const handlePriceChange = (event, newValue) => {
-    setPriceRange(newValue);
-  };
-
-  // Toggle filter visibility
+  // Toggle filter panel visibility
   const toggleFilters = () => {
     setFilterVisible(!filterVisible);
   };
 
   return (
     neighbourhoods.length > 0 && (
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4}}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           London Airbnb Explorer
         </Typography>
-
         <Typography variant="body1" paragraph>
-          Explore Airbnb listings across London. Click on a marker to view details about the listing.
+          Explore Airbnb listings across London. Drag or zoom the map to load
+          listings in that area.
         </Typography>
-
-        {/* Error notification */}
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert
-            onClose={() => setError(null)}
-            severity="error"
-            sx={{ width: "100%" }}
-          >
-            {error}
-          </Alert>
-        </Snackbar>
 
         {/* Filter bar */}
         <Paper
@@ -145,28 +166,16 @@ export default function MapPage() {
             gap: 2,
           }}
         >
-          <FormControlLabel
-            control={
-              <Switch
-                checked={filterVisible}
-                onChange={toggleFilters}
-                color="primary"
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <FilterListIcon sx={{ mr: 0.5 }} />
-                <Typography variant="body2">Filters</Typography>
-              </Box>
-            }
-          />
-          
+          {/** Neighbourhood filter */}
           <FormControl sx={{ m: 1, minWidth: 200 }} size="small">
             <InputLabel>Neighbourhood</InputLabel>
             <Select
               label="Neighbourhood"
-              onChange={(e) => setSelectedNeighbourhood(e.target.value)}
               value={selectedNeighbourhood}
+              onChange={(e) => {
+                setNeighbourhoodChanged(true);
+                setSelectedNeighbourhood(e.target.value);
+              }}
             >
               <MenuItem value="All">All Neighbourhoods</MenuItem>
               {neighbourhoods.map((n) => (
@@ -176,43 +185,6 @@ export default function MapPage() {
               ))}
             </Select>
           </FormControl>
-
-          <TextField
-            label="Min Price"
-            type="number"
-            size="small"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">£</InputAdornment>
-                ),
-              },
-            }}
-            value={priceRange[0]}
-            onChange={(e) =>
-              setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])
-            }
-            sx={{ width: 120 }}
-          />
-
-          <TextField
-            label="Max Price"
-            type="number"
-            size="small"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">£</InputAdornment>
-                ),
-              },
-            }}
-            value={priceRange[1]}
-            onChange={(e) =>
-              setPriceRange([priceRange[0], parseInt(e.target.value) || 1000])
-            }
-            sx={{ width: 120 }}
-          />
-
           <Chip
             label={`${listings.length} listings`}
             color="primary"
@@ -221,9 +193,9 @@ export default function MapPage() {
           />
         </Paper>
 
-        {/* Map View */}
+        {/* Map view and listing details */}
         <Grid container spacing={3}>
-          {/* Map area */}
+          {/* Map Area */}
           <Grid item size={{ xs: 12, md: selectedListing ? 8 : 12 }}>
             <Paper
               sx={{
@@ -234,28 +206,27 @@ export default function MapPage() {
                 flexDirection: "column",
               }}
             >
-              {loading ? (
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100%",
-                  }}
-                >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <GoogleMapComponent
-                  listings={listings}
-                  onMarkerClick={handleMarkerClick}
-                  selectedListing={selectedListing}
-                />
-              )}
+              <GoogleMapComponent
+                listings={listings}
+                selectedListing={selectedListing}
+                onMarkerClick={handleMarkerClick}
+                onBoundsChanged={(newBounds) => {
+                  // Update mapBounds state when the map's view (bounds) changes significantly
+                  if (
+                    !mapBounds ||
+                    Math.abs(newBounds.lat_min - mapBounds.lat_min) > 0.001 ||
+                    Math.abs(newBounds.lat_max - mapBounds.lat_max) > 0.001 ||
+                    Math.abs(newBounds.lng_min - mapBounds.lng_min) > 0.001 ||
+                    Math.abs(newBounds.lng_max - mapBounds.lng_max) > 0.001
+                  ) {
+                    setMapBounds(newBounds);
+                  }
+                }}
+              />
             </Paper>
           </Grid>
 
-          {/* Listing details pane */}
+          {/* Details pane for selected listing (appears when a marker is clicked) */}
           {selectedListing && (
             <Grid item size={{ xs: 12, md: 4 }}>
               <ListingDetailsPane

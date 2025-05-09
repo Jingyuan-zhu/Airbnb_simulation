@@ -1,4 +1,9 @@
-const { connection, validateParam, validatePagination, wrapAsync } = require("./db");
+const {
+  connection,
+  validateParam,
+  validatePagination,
+  wrapAsync,
+} = require("./db");
 
 /**
  * @swagger
@@ -15,6 +20,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *           type: integer
  *           minimum: 1
  *         description: Page number for pagination (default is 1)
+ *         example: 1
  *       - in: query
  *         name: page_size
  *         schema:
@@ -22,6 +28,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *           minimum: 1
  *           maximum: 100
  *         description: Number of items per page (default is return all)
+ *         example: 20
  *     responses:
  *       200:
  *         description: A list of Airbnb listings
@@ -35,22 +42,28 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *                   id:
  *                     type: integer
  *                     description: Unique identifier of the listing
+ *                     example: 12345
  *                   name:
  *                     type: string
  *                     description: Name of the listing
+ *                     example: "Cozy London Flat in Central Location"
  *                   neighbourhood:
  *                     type: string
  *                     description: Neighbourhood where the listing is located
+ *                     example: "Westminster"
  *                   room_type_simple:
  *                     type: string
  *                     description: Type of room (e.g., Entire home/apt, Private room)
+ *                     example: "entire"
  *                   price:
  *                     type: number
  *                     format: float
  *                     description: Price per night
+ *                     example: 120.50
  *                   number_of_reviews:
  *                     type: integer
  *                     description: Number of reviews for the listing
+ *                     example: 45
  *       400:
  *         description: Invalid pagination parameters
  *         content:
@@ -60,6 +73,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "Page parameter invalid: Must be at least 1"
  *       500:
  *         description: Database error
  *         content:
@@ -69,7 +83,7 @@ const { connection, validateParam, validatePagination, wrapAsync } = require("./
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Database error. Please try again later.
+ *                   example: "Database error. Please try again later."
  */
 // Route: GET /listings
 const getListings = wrapAsync(async function (req, res) {
@@ -92,7 +106,9 @@ const getListings = wrapAsync(async function (req, res) {
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -116,6 +132,7 @@ const getListings = wrapAsync(async function (req, res) {
  *           type: integer
  *           minimum: 1
  *         description: Unique identifier of the listing
+ *         example: 12345
  *     responses:
  *       200:
  *         description: Detailed information about a listing
@@ -126,38 +143,52 @@ const getListings = wrapAsync(async function (req, res) {
  *               properties:
  *                 id:
  *                   type: integer
+ *                   example: 12345
  *                 host_id:
  *                   type: integer
+ *                   example: 54321
  *                 name:
  *                   type: string
+ *                   example: "Cozy London Flat in Central Location"
  *                 description:
  *                   type: string
+ *                   example: "Beautiful and cozy flat with all modern amenities in a prime location..."
  *                 picture_url:
  *                   type: string
+ *                   example: "https://example.com/images/listing12345.jpg"
  *                 neighbourhood_cleansed:
  *                   type: string
+ *                   example: "Westminster"
  *                 latitude:
  *                   type: number
  *                   format: float
+ *                   example: 51.5074
  *                 longitude:
  *                   type: number
  *                   format: float
+ *                   example: -0.1278
  *                 accommodates:
  *                   type: integer
+ *                   example: 4
  *                 bathrooms:
  *                   type: number
  *                   format: float
+ *                   example: 1.5
  *                 bedrooms:
  *                   type: number
  *                   format: float
+ *                   example: 2
  *                 beds:
  *                   type: number
  *                   format: float
+ *                   example: 2
  *                 price:
  *                   type: number
  *                   format: float
+ *                   example: 120.50
  *                 room_type_simple:
  *                   type: string
+ *                   example: "entire"
  *       400:
  *         description: Invalid listing ID
  *         content:
@@ -167,6 +198,7 @@ const getListings = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "Listing ID invalid: Must be a number"
  *       404:
  *         description: Listing not found
  *         content:
@@ -176,7 +208,7 @@ const getListings = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Listing not found
+ *                   example: "Listing not found"
  *       500:
  *         description: Database error
  *         content:
@@ -186,13 +218,18 @@ const getListings = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Database error. Please try again later.
+ *                   example: "Database error. Please try again later."
  */
 // Route: GET /listings/:listing_id
 const getListing = wrapAsync(async function (req, res) {
-  const listingIdValidation = validateParam(req.params.listing_id, 'number', { required: true, min: 1 });
+  const listingIdValidation = validateParam(req.params.listing_id, "number", {
+    required: true,
+    min: 1,
+  });
   if (!listingIdValidation.isValid) {
-    return res.status(400).json({ error: `Listing ID invalid: ${listingIdValidation.message}` });
+    return res
+      .status(400)
+      .json({ error: `Listing ID invalid: ${listingIdValidation.message}` });
   }
 
   const listing_id = parseInt(req.params.listing_id);
@@ -200,15 +237,33 @@ const getListing = wrapAsync(async function (req, res) {
   // Get detailed information about a specific listing using parameterized query
   connection.query(
     `
-    SELECT *
-    FROM listings
-    WHERE id = $1
+    SELECT 
+      l.id,
+      l.name,
+      l.description,
+      l.picture_url,
+      l.neighbourhood_cleansed,
+      l.accommodates,
+      l.bathrooms,
+      l.bedrooms,
+      l.beds,
+      l.price,
+      l.room_type_simple,
+      h.host_name,
+      h.response_rate,
+      h.acceptance_rate,
+      h.is_superhost
+    FROM listings l
+    LEFT JOIN host h ON l.host_id = h.host_id
+    WHERE l.id = $1;
   `,
     [listing_id],
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else if (!data.rows || data.rows.length === 0) {
         return res.status(404).json({ error: "Listing not found" });
       } else {
@@ -418,17 +473,29 @@ const searchListings = wrapAsync(async function (req, res) {
 
   // Validate range parameters
   const rangeParams = [
-    'latitude_low', 'latitude_high', 'longitude_low', 'longitude_high',
-    'accommodates_low', 'accommodates_high', 'bathrooms_low', 'bathrooms_high',
-    'bedrooms_low', 'bedrooms_high', 'beds_low', 'beds_high',
-    'price_low', 'price_high',
+    "latitude_low",
+    "latitude_high",
+    "longitude_low",
+    "longitude_high",
+    "accommodates_low",
+    "accommodates_high",
+    "bathrooms_low",
+    "bathrooms_high",
+    "bedrooms_low",
+    "bedrooms_high",
+    "beds_low",
+    "beds_high",
+    "price_low",
+    "price_high",
   ];
 
   for (const param of rangeParams) {
     if (req.query[param]) {
-      const validation = validateParam(req.query[param], 'number');
+      const validation = validateParam(req.query[param], "number");
       if (!validation.isValid) {
-        return res.status(400).json({ error: `Parameter ${param} invalid: ${validation.message}` });
+        return res
+          .status(400)
+          .json({ error: `Parameter ${param} invalid: ${validation.message}` });
       }
     }
   }
@@ -503,7 +570,9 @@ const searchListings = wrapAsync(async function (req, res) {
   connection.query(query, params, (err, data) => {
     if (err) {
       console.error("Error searching listings:", err);
-      return res.status(500).json({ error: "Database error. Please try again later." });
+      return res
+        .status(500)
+        .json({ error: "Database error. Please try again later." });
     }
 
     // Return results with pagination metadata
@@ -528,12 +597,14 @@ const searchListings = wrapAsync(async function (req, res) {
  *           type: integer
  *           minimum: 1
  *         description: Unique identifier of the listing
+ *         example: 12345
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           minimum: 1
  *         description: Page number for pagination (default is 1)
+ *         example: 1
  *       - in: query
  *         name: page_size
  *         schema:
@@ -541,6 +612,7 @@ const searchListings = wrapAsync(async function (req, res) {
  *           minimum: 1
  *           maximum: 100
  *         description: Number of items per page (default is return all)
+ *         example: 20
  *     responses:
  *       200:
  *         description: A list of reviews for the specified listing
@@ -554,26 +626,33 @@ const searchListings = wrapAsync(async function (req, res) {
  *                   id:
  *                     type: integer
  *                     description: Unique identifier of the review
+ *                     example: 89765
  *                   listing_id:
  *                     type: integer
  *                     description: ID of the listing this review belongs to
+ *                     example: 12345
  *                   date:
  *                     type: string
  *                     format: date
  *                     description: Date the review was posted
+ *                     example: "2023-05-15"
  *                   reviewer_id:
  *                     type: integer
  *                     description: ID of the reviewer
+ *                     example: 76543
  *                   reviewer_name:
  *                     type: string
  *                     description: Name of the reviewer
+ *                     example: "Jane Doe"
  *                   comments:
  *                     type: string
  *                     description: Review text
+ *                     example: "Great location and very clean apartment. Would definitely stay again!"
  *                   sentiment:
  *                     type: string
  *                     enum: [Positive, Neutral, Negative]
  *                     description: Sentiment analysis of the review
+ *                     example: "Positive"
  *       400:
  *         description: Invalid parameters
  *         content:
@@ -583,6 +662,7 @@ const searchListings = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "Listing ID invalid: Must be a number"
  *       500:
  *         description: Database error
  *         content:
@@ -592,14 +672,19 @@ const searchListings = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Database error. Please try again later.
+ *                   example: "Database error. Please try again later."
  */
 // Route: GET /listings/:listing_id/reviews
 const getReviews = wrapAsync(async function (req, res) {
   // Validate listing_id parameter
-  const listingIdValidation = validateParam(req.params.listing_id, 'number', { required: true, min: 1 });
+  const listingIdValidation = validateParam(req.params.listing_id, "number", {
+    required: true,
+    min: 1,
+  });
   if (!listingIdValidation.isValid) {
-    return res.status(400).json({ error: `Listing ID invalid: ${listingIdValidation.message}` });
+    return res
+      .status(400)
+      .json({ error: `Listing ID invalid: ${listingIdValidation.message}` });
   }
 
   // Validate pagination parameters
@@ -607,24 +692,30 @@ const getReviews = wrapAsync(async function (req, res) {
   if (!pagination) return; // Validation failed, response already sent
 
   const listing_id = parseInt(req.params.listing_id);
+  console.log(listing_id);
   const { page, pageSize, offset } = pagination;
 
   // Get reviews for a specific listing
   connection.query(
     `
-    SELECT r.*
-    FROM reviews r
-    JOIN review_info ri ON r.id = ri.id
-    WHERE ri.listing_id = $1
-    ORDER BY r.date DESC
-    LIMIT $2
-    OFFSET $3
+      SELECT 
+        r.date,
+        r.reviewer_name,
+        r.comments,
+        r.sentiment
+      FROM   reviews r
+      WHERE  r.listing_id = $1
+      ORDER BY r.date DESC
+      LIMIT $2
+      OFFSET $3
   `,
     [listing_id, pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
-        return res.status(500).json({ error: "Database error. Please try again later." });
+        return res
+          .status(500)
+          .json({ error: "Database error. Please try again later." });
       } else {
         res.json(data.rows || []);
       }
@@ -647,31 +738,36 @@ const getReviews = wrapAsync(async function (req, res) {
  *           type: number
  *           format: float
  *         description: Minimum latitude for bounding box
+ *         example: 51.45
  *       - in: query
  *         name: lat_max
  *         schema:
  *           type: number
  *           format: float
  *         description: Maximum latitude for bounding box
+ *         example: 51.55
  *       - in: query
  *         name: lng_min
  *         schema:
  *           type: number
  *           format: float
  *         description: Minimum longitude for bounding box
+ *         example: -0.15
  *       - in: query
  *         name: lng_max
  *         schema:
  *           type: number
  *           format: float
  *         description: Maximum longitude for bounding box
+ *         example: -0.05
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           minimum: 1
  *           maximum: 1000
- *         description: Maximum number of listings to return (default is 500, max 1000)
+ *         description: Maximum number of listings to return (default is 100, max 1000)
+ *         example: 100
  *     responses:
  *       200:
  *         description: A list of listings for map display
@@ -684,27 +780,66 @@ const getReviews = wrapAsync(async function (req, res) {
  *                 properties:
  *                   id:
  *                     type: integer
+ *                     example: 12345
  *                   name:
  *                     type: string
+ *                     example: "Cozy London Flat in Central Location"
  *                   latitude:
  *                     type: number
  *                     format: float
+ *                     example: 51.5074
  *                   longitude:
  *                     type: number
  *                     format: float
+ *                     example: -0.1278
  *                   price:
  *                     type: number
  *                     format: float
+ *                     example: 120.50
  *                   room_type_simple:
  *                     type: string
+ *                     example: "entire"
  *                   picture_url:
  *                     type: string
+ *                     example: "https://example.com/images/listing12345.jpg"
  *                   neighbourhood_cleansed:
  *                     type: string
+ *                     example: "Westminster"
+ *                   accommodates:
+ *                     type: integer
+ *                     example: 4
+ *                   bedrooms:
+ *                     type: number
+ *                     format: float
+ *                     example: 2
+ *                   beds:
+ *                     type: number
+ *                     format: float
+ *                     example: 2
+ *                   scores_rating:
+ *                     type: number
+ *                     format: float
+ *                     example: 4.85
  *       400:
  *         description: Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid limit parameter. Must be between 1 and 1000."
  *       500:
  *         description: Database error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Database error. Please try again later."
  */
 const getMapListings = wrapAsync(async function (req, res) {
   // Parse and validate query parameters
@@ -713,66 +848,108 @@ const getMapListings = wrapAsync(async function (req, res) {
   const lngMin = req.query.lng_min ? parseFloat(req.query.lng_min) : null;
   const lngMax = req.query.lng_max ? parseFloat(req.query.lng_max) : null;
   const priceLow = req.query.price_low ? parseFloat(req.query.price_low) : null;
-  const priceHigh = req.query.price_high ? parseFloat(req.query.price_high) : null;
-  const neightbourhood = req.query.neighbourhood || null;
+  const priceHigh = req.query.price_high
+    ? parseFloat(req.query.price_high)
+    : null;
+  const neighbourhood = req.query.neighbourhood || null;
   const limit = req.query.limit ? parseInt(req.query.limit) : 500;
-  
+
   // Validate limit
   if (isNaN(limit) || limit < 1 || limit > 1000) {
-    return res.status(400).json({ error: "Invalid limit parameter. Must be between 1 and 1000." });
+    return res
+      .status(400)
+      .json({ error: "Invalid limit parameter. Must be between 1 and 1000." });
   }
-  
+
   // Validate coordinates if provided
-  if ((latMin !== null && isNaN(latMin)) || 
-      (latMax !== null && isNaN(latMax)) ||
-      (lngMin !== null && isNaN(lngMin)) ||
-      (lngMax !== null && isNaN(lngMax))) {
+  if (
+    (latMin !== null && isNaN(latMin)) ||
+    (latMax !== null && isNaN(latMax)) ||
+    (lngMin !== null && isNaN(lngMin)) ||
+    (lngMax !== null && isNaN(lngMax))
+  ) {
     return res.status(400).json({ error: "Invalid coordinate parameters." });
   }
-  
-  // Build WHERE clause for bounding box, if coordinates are provided
-  let whereClause = '';
+
+  // Build WHERE clause dynamically based on provided filters
+  let whereConditions = [];
   const params = [];
-  
-  if (latMin !== null && latMax !== null && lngMin !== null && lngMax !== null) {
-    whereClause = 'WHERE latitude >= $1 AND latitude <= $2 AND longitude >= $3 AND longitude <= $4';
+  let paramIndex = 1;
+
+  // Add coordinate bounding box if provided
+  if (
+    latMin !== null &&
+    latMax !== null &&
+    lngMin !== null &&
+    lngMax !== null
+  ) {
+    whereConditions.push(
+      `latitude >= $${paramIndex++} AND latitude <= $${paramIndex++} AND longitude >= $${paramIndex++} AND longitude <= $${paramIndex++}`
+    );
     params.push(latMin, latMax, lngMin, lngMax);
   }
-  
+
+  // Add price range filter if provided
+  if (priceLow !== null) {
+    whereConditions.push(`price >= $${paramIndex++}`);
+    params.push(priceLow);
+  }
+
+  if (priceHigh !== null) {
+    whereConditions.push(`price <= $${paramIndex++}`);
+    params.push(priceHigh);
+  }
+
+  // Add neighbourhood filter if provided
+  if (neighbourhood !== null) {
+    whereConditions.push(`neighbourhood_cleansed = $${paramIndex++}`);
+    params.push(neighbourhood);
+  }
+
+  // Build the complete WHERE clause
+  const whereClause =
+    whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
+
   // Build query
   const query = `
-    SELECT 
-      l.id, 
-      l.name, 
-      l.latitude, 
-      l.longitude, 
-      l.price, 
+    SELECT
+      l.id,
+      l.name,
+      l.latitude,
+      l.longitude,
+      l.price,
       l.room_type_simple,
       l.picture_url,
       l.neighbourhood_cleansed,
       l.accommodates,
       l.bedrooms,
       l.beds,
+      l.bathrooms,
       ri.scores_rating
-    FROM 
+    FROM
       listings l
-    LEFT JOIN 
+    LEFT JOIN
       review_info ri ON l.id = ri.id
     ${whereClause}
-    ORDER BY 
-      ri.scores_rating DESC NULLS LAST
-    LIMIT $${params.length + 1}
+    LIMIT $${paramIndex++}
   `;
-  
+
   params.push(limit);
-  
+
+  // Log the query for debugging
+  console.log("Map query:", query);
+  console.log("Map params:", params);
+
   // Execute query
   connection.query(query, params, (err, data) => {
     if (err) {
       console.error("Error fetching map listings:", err);
-      return res.status(500).json({ error: "Database error. Please try again later." });
+      return res
+        .status(500)
+        .json({ error: "Database error. Please try again later." });
     }
-    
+
+    console.log(`Returning ${data.rows?.length || 0} listings within bounds`);
     res.json(data.rows || []);
   });
 });
@@ -782,5 +959,5 @@ module.exports = {
   getListing,
   searchListings,
   getReviews,
-  getMapListings
+  getMapListings,
 };

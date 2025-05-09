@@ -87,7 +87,7 @@ export default function StatsPage() {
     neighbourhoods.length > 0 && (
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          London Airbnb Neighborhood Analysis
+          London Airbnb Neighbourhood Analysis
         </Typography>
         <Typography variant="body1" paragraph>
           Analyze host performance across London neighbourhoods. Compare Superhosts vs Non-Superhosts.

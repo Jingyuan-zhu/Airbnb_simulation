@@ -8,8 +8,9 @@ import ListingDetailPage from "./pages/ListingDetailPage";
 import MapPage from "./pages/MapPage";
 import StatsPage from "./pages/StatsPage";
 import Login from "./components/Login";
+import HighPerformerHostsPage from "./pages/HighPerformerHostsPage";
 
-import Dashboard from "./pages/Dashboard";
+
 import AppTheme from "./theme/AppTheme";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -28,7 +29,7 @@ export default function App() {
             <Route path="/listings" element={<ListingsPage />} />
             <Route path="/listings/:listing_id" element={<ListingDetailPage />} />
             <Route path="/map" element={<MapPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/high-performer-hosts" element={<HighPerformerHostsPage />} />
             <Route path="/login" element={<Login />} />
           </Routes>
         </BrowserRouter>

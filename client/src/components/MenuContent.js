@@ -5,6 +5,7 @@ import Stack from "@mui/material/Stack";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -16,9 +17,10 @@ import { Box, Menu, MenuItem, Button, Avatar } from "@mui/material";
 
 const mainListItems = [
   { text: "Home", icon: <HomeRoundedIcon />, route: "/" },
-  { text: "Neighbourhoods", icon: <AnalyticsRoundedIcon />, route: "/stats" },
+  { text: "Neighbourhoods", icon: <AnalyticsRoundedIcon />, route: "/neighbourhood" },
   { text: "Listings", icon: <AnalyticsRoundedIcon />, route: "/listings" },
   { text: "Map", icon: <PeopleRoundedIcon />, route: "/map" },
+  { text: "Top Hosts", icon: <StarRoundedIcon />, route: "/high-performer-hosts" },
 ];
 
 const secondaryListItems = [

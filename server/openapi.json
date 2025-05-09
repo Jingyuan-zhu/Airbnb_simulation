@@ -255,7 +255,8 @@
               "type": "string",
               "format": "date"
             },
-            "description": "Filter results after this date (YYYY-MM-DD format, defaults to 1900-01-01)"
+            "description": "Filter results after this date (YYYY-MM-DD format, defaults to 1900-01-01)",
+            "example": "2023-01-01"
           },
           {
             "in": "query",
@@ -264,7 +265,8 @@
               "type": "string",
               "format": "date"
             },
-            "description": "Filter results before this date (YYYY-MM-DD format, defaults to 2100-01-01)"
+            "description": "Filter results before this date (YYYY-MM-DD format, defaults to 2100-01-01)",
+            "example": "2023-12-31"
           }
         ],
         "responses": {
@@ -279,16 +281,19 @@
                     "properties": {
                       "review_month": {
                         "type": "string",
-                        "description": "Month in YYYY-MM format"
+                        "description": "Month in YYYY-MM format",
+                        "example": "2023-01"
                       },
                       "listings_reviewed_count": {
                         "type": "integer",
-                        "description": "Number of listings reviewed in this month"
+                        "description": "Number of listings reviewed in this month",
+                        "example": 245
                       },
                       "average_price_of_reviewed_listings": {
                         "type": "number",
                         "format": "float",
-                        "description": "Average price of listings reviewed in this month"
+                        "description": "Average price of listings reviewed in this month",
+                        "example": 125.5
                       }
                     }
                   }
@@ -304,7 +309,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "After date parameter invalid: Must be a valid date"
                     }
                   }
                 }
@@ -348,6 +354,25 @@
               "maximum": 5
             },
             "description": "Minimum rating threshold for hidden gems (default is 4.8)"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Page number for pagination (default is 1)"
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page (default is to return all)"
           }
         ],
         "responses": {
@@ -419,7 +444,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Minimum rating parameter invalid: Must be at most 5"
                     }
                   }
                 }
@@ -462,16 +488,19 @@
                   "properties": {
                     "total_listings": {
                       "type": "integer",
-                      "description": "Total number of listings in the database"
+                      "description": "Total number of listings in the database",
+                      "example": 23456
                     },
                     "avg_price": {
                       "type": "number",
                       "format": "float",
-                      "description": "Average price of all listings"
+                      "description": "Average price of all listings",
+                      "example": 125.75
                     },
                     "total_neighborhoods": {
                       "type": "integer",
-                      "description": "Total number of unique neighborhoods"
+                      "description": "Total number of unique neighborhoods",
+                      "example": 34
                     }
                   }
                 }
@@ -767,27 +796,6 @@
           "Hosts",
           "Analytics"
         ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "page",
-            "schema": {
-              "type": "integer",
-              "minimum": 1
-            },
-            "description": "Page number for pagination (default is 1)"
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
-            },
-            "description": "Number of items per page (default is to return all)"
-          }
-        ],
         "responses": {
           "200": {
             "description": "Comparison of metrics between hosts with good interaction and others",
@@ -890,7 +898,8 @@
             "schema": {
               "type": "boolean"
             },
-            "description": "If true, only show stats for verified hosts (default is false)"
+            "description": "If true, only show stats for verified hosts (default is false)",
+            "example": true
           }
         ],
         "responses": {
@@ -905,16 +914,19 @@
                     "properties": {
                       "identity_verified": {
                         "type": "boolean",
-                        "description": "Whether the identity is verified"
+                        "description": "Whether the identity is verified",
+                        "example": true
                       },
                       "number_of_hosts": {
                         "type": "integer",
-                        "description": "Number of hosts with this verification status"
+                        "description": "Number of hosts with this verification status",
+                        "example": 1256
                       },
                       "percentage_of_total": {
                         "type": "number",
                         "format": "float",
-                        "description": "Percentage of total hosts with this verification status"
+                        "description": "Percentage of total hosts with this verification status",
+                        "example": 65.23
                       }
                     }
                   }
@@ -930,7 +942,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Only verified parameter invalid: Must be a boolean"
                     }
                   }
                 }
@@ -972,7 +985,8 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "Minimum number of listings a host must have (default is 3)"
+            "description": "Minimum number of listings a host must have (default is 3)",
+            "example": 5
           },
           {
             "in": "query",
@@ -983,7 +997,8 @@
               "minimum": 1,
               "maximum": 5
             },
-            "description": "Minimum rating a host's listings must have (default is 4.7)"
+            "description": "Minimum rating a host's listings must have (default is 4.7)",
+            "example": 4.8
           },
           {
             "in": "query",
@@ -997,7 +1012,8 @@
                 "min_listing_rating"
               ]
             },
-            "description": "Field to order the results by"
+            "description": "Field to order the results by",
+            "example": "total_listings_count"
           }
         ],
         "responses": {
@@ -1012,25 +1028,30 @@
                     "properties": {
                       "host_id": {
                         "type": "integer",
-                        "description": "Unique identifier of the host"
+                        "description": "Unique identifier of the host",
+                        "example": 12345
                       },
                       "host_name": {
                         "type": "string",
-                        "description": "Name of the host"
+                        "description": "Name of the host",
+                        "example": "John Smith"
                       },
                       "total_listings_count": {
                         "type": "integer",
-                        "description": "Total number of listings this host has"
+                        "description": "Total number of listings this host has",
+                        "example": 8
                       },
                       "average_value_score_across_listings": {
                         "type": "number",
                         "format": "float",
-                        "description": "Average value score across all listings for this host"
+                        "description": "Average value score across all listings for this host",
+                        "example": 4.85
                       },
                       "min_listing_rating": {
                         "type": "number",
                         "format": "float",
-                        "description": "Minimum rating among all listings for this host"
+                        "description": "Minimum rating among all listings for this host",
+                        "example": 4.7
                       }
                     }
                   }
@@ -1046,7 +1067,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Minimum listings parameter invalid: Must be at least 1"
                     }
                   }
                 }
@@ -1087,7 +1109,8 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "Page number for pagination (default is 1)"
+            "description": "Page number for pagination (default is 1)",
+            "example": 1
           },
           {
             "in": "query",
@@ -1097,7 +1120,8 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is return all)"
+            "description": "Number of items per page (default is return all)",
+            "example": 20
           }
         ],
         "responses": {
@@ -1112,28 +1136,34 @@
                     "properties": {
                       "id": {
                         "type": "integer",
-                        "description": "Unique identifier of the listing"
+                        "description": "Unique identifier of the listing",
+                        "example": 12345
                       },
                       "name": {
                         "type": "string",
-                        "description": "Name of the listing"
+                        "description": "Name of the listing",
+                        "example": "Cozy London Flat in Central Location"
                       },
                       "neighbourhood": {
                         "type": "string",
-                        "description": "Neighbourhood where the listing is located"
+                        "description": "Neighbourhood where the listing is located",
+                        "example": "Westminster"
                       },
                       "room_type_simple": {
                         "type": "string",
-                        "description": "Type of room (e.g., Entire home/apt, Private room)"
+                        "description": "Type of room (e.g., Entire home/apt, Private room)",
+                        "example": "entire"
                       },
                       "price": {
                         "type": "number",
                         "format": "float",
-                        "description": "Price per night"
+                        "description": "Price per night",
+                        "example": 120.5
                       },
                       "number_of_reviews": {
                         "type": "integer",
-                        "description": "Number of reviews for the listing"
+                        "description": "Number of reviews for the listing",
+                        "example": 45
                       }
                     }
                   }
@@ -1149,7 +1179,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Page parameter invalid: Must be at least 1"
                     }
                   }
                 }
@@ -1191,7 +1222,8 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "Unique identifier of the listing"
+            "description": "Unique identifier of the listing",
+            "example": 12345
           }
         ],
         "responses": {
@@ -1203,52 +1235,66 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "integer"
+                      "type": "integer",
+                      "example": 12345
                     },
                     "host_id": {
-                      "type": "integer"
+                      "type": "integer",
+                      "example": 54321
                     },
                     "name": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Cozy London Flat in Central Location"
                     },
                     "description": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Beautiful and cozy flat with all modern amenities in a prime location..."
                     },
                     "picture_url": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "https://example.com/images/listing12345.jpg"
                     },
                     "neighbourhood_cleansed": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Westminster"
                     },
                     "latitude": {
                       "type": "number",
-                      "format": "float"
+                      "format": "float",
+                      "example": 51.5074
                     },
                     "longitude": {
                       "type": "number",
-                      "format": "float"
+                      "format": "float",
+                      "example": -0.1278
                     },
                     "accommodates": {
-                      "type": "integer"
+                      "type": "integer",
+                      "example": 4
                     },
                     "bathrooms": {
                       "type": "number",
-                      "format": "float"
+                      "format": "float",
+                      "example": 1.5
                     },
                     "bedrooms": {
                       "type": "number",
-                      "format": "float"
+                      "format": "float",
+                      "example": 2
                     },
                     "beds": {
                       "type": "number",
-                      "format": "float"
+                      "format": "float",
+                      "example": 2
                     },
                     "price": {
                       "type": "number",
-                      "format": "float"
+                      "format": "float",
+                      "example": 120.5
                     },
                     "room_type_simple": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "entire"
                     }
                   }
                 }
@@ -1263,7 +1309,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Listing ID invalid: Must be a number"
                     }
                   }
                 }
@@ -1612,7 +1659,8 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "Unique identifier of the listing"
+            "description": "Unique identifier of the listing",
+            "example": 12345
           },
           {
             "in": "query",
@@ -1621,7 +1669,8 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "Page number for pagination (default is 1)"
+            "description": "Page number for pagination (default is 1)",
+            "example": 1
           },
           {
             "in": "query",
@@ -1631,7 +1680,8 @@
               "minimum": 1,
               "maximum": 100
             },
-            "description": "Number of items per page (default is return all)"
+            "description": "Number of items per page (default is return all)",
+            "example": 20
           }
         ],
         "responses": {
@@ -1646,28 +1696,34 @@
                     "properties": {
                       "id": {
                         "type": "integer",
-                        "description": "Unique identifier of the review"
+                        "description": "Unique identifier of the review",
+                        "example": 89765
                       },
                       "listing_id": {
                         "type": "integer",
-                        "description": "ID of the listing this review belongs to"
+                        "description": "ID of the listing this review belongs to",
+                        "example": 12345
                       },
                       "date": {
                         "type": "string",
                         "format": "date",
-                        "description": "Date the review was posted"
+                        "description": "Date the review was posted",
+                        "example": "2023-05-15"
                       },
                       "reviewer_id": {
                         "type": "integer",
-                        "description": "ID of the reviewer"
+                        "description": "ID of the reviewer",
+                        "example": 76543
                       },
                       "reviewer_name": {
                         "type": "string",
-                        "description": "Name of the reviewer"
+                        "description": "Name of the reviewer",
+                        "example": "Jane Doe"
                       },
                       "comments": {
                         "type": "string",
-                        "description": "Review text"
+                        "description": "Review text",
+                        "example": "Great location and very clean apartment. Would definitely stay again!"
                       },
                       "sentiment": {
                         "type": "string",
@@ -1676,7 +1732,8 @@
                           "Neutral",
                           "Negative"
                         ],
-                        "description": "Sentiment analysis of the review"
+                        "description": "Sentiment analysis of the review",
+                        "example": "Positive"
                       }
                     }
                   }
@@ -1692,7 +1749,8 @@
                   "type": "object",
                   "properties": {
                     "error": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "Listing ID invalid: Must be a number"
                     }
                   }
                 }
@@ -1733,7 +1791,8 @@
               "type": "number",
               "format": "float"
             },
-            "description": "Minimum latitude for bounding box"
+            "description": "Minimum latitude for bounding box",
+            "example": 51.45
           },
           {
             "in": "query",
@@ -1742,7 +1801,8 @@
               "type": "number",
               "format": "float"
             },
-            "description": "Maximum latitude for bounding box"
+            "description": "Maximum latitude for bounding box",
+            "example": 51.55
           },
           {
             "in": "query",
@@ -1751,7 +1811,8 @@
               "type": "number",
               "format": "float"
             },
-            "description": "Minimum longitude for bounding box"
+            "description": "Minimum longitude for bounding box",
+            "example": -0.15
           },
           {
             "in": "query",
@@ -1760,7 +1821,8 @@
               "type": "number",
               "format": "float"
             },
-            "description": "Maximum longitude for bounding box"
+            "description": "Maximum longitude for bounding box",
+            "example": -0.05
           },
           {
             "in": "query",
@@ -1770,7 +1832,8 @@
               "minimum": 1,
               "maximum": 1000
             },
-            "description": "Maximum number of listings to return (default is 500, max 1000)"
+            "description": "Maximum number of listings to return (default is 100, max 1000)",
+            "example": 100
           }
         ],
         "responses": {
@@ -1784,31 +1847,58 @@
                     "type": "object",
                     "properties": {
                       "id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "example": 12345
                       },
                       "name": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "Cozy London Flat in Central Location"
                       },
                       "latitude": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": 51.5074
                       },
                       "longitude": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": -0.1278
                       },
                       "price": {
                         "type": "number",
-                        "format": "float"
+                        "format": "float",
+                        "example": 120.5
                       },
                       "room_type_simple": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "entire"
                       },
                       "picture_url": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "https://example.com/images/listing12345.jpg"
                       },
                       "neighbourhood_cleansed": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "Westminster"
+                      },
+                      "accommodates": {
+                        "type": "integer",
+                        "example": 4
+                      },
+                      "bedrooms": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 2
+                      },
+                      "beds": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 2
+                      },
+                      "scores_rating": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 4.85
                       }
                     }
                   }
@@ -1817,10 +1907,36 @@
             }
           },
           "400": {
-            "description": "Invalid parameters"
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Invalid limit parameter. Must be between 1 and 1000."
+                    }
+                  }
+                }
+              }
+            }
           },
           "500": {
-            "description": "Database error"
+            "description": "Database error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Database error. Please try again later."
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

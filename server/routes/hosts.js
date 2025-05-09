@@ -328,20 +328,6 @@ ORDER BY
  *     tags:
  *       - Hosts
  *       - Analytics
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *         description: Page number for pagination (default is 1)
- *       - in: query
- *         name: page_size
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *         description: Number of items per page (default is to return all)
  *     responses:
  *       200:
  *         description: Comparison of metrics between hosts with good interaction and others
@@ -404,11 +390,6 @@ ORDER BY
 // Query 5
 // Route: GET /hosts/interactions
 const getHostInteractions = wrapAsync(async function (req, res) {
-  // Validate pagination parameters
-  const pagination = validatePagination(req.query, res);
-  if (!pagination) return; // Validation failed, response already sent
-
-  const { page, pageSize, offset } = pagination;
 
   connection.query(
     `
@@ -458,10 +439,7 @@ const getHostInteractions = wrapAsync(async function (req, res) {
       ORDER BY
           l.neighbourhood_cleansed,
           l.bedrooms
-      LIMIT $1
-      OFFSET $2;
   `,
-    [pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);
@@ -490,6 +468,7 @@ const getHostInteractions = wrapAsync(async function (req, res) {
  *         schema:
  *           type: boolean
  *         description: If true, only show stats for verified hosts (default is false)
+ *         example: true
  *     responses:
  *       200:
  *         description: Statistics about hosts' identity verification
@@ -503,13 +482,16 @@ const getHostInteractions = wrapAsync(async function (req, res) {
  *                   identity_verified:
  *                     type: boolean
  *                     description: Whether the identity is verified
+ *                     example: true
  *                   number_of_hosts:
  *                     type: integer
  *                     description: Number of hosts with this verification status
+ *                     example: 1256
  *                   percentage_of_total:
  *                     type: number
  *                     format: float
  *                     description: Percentage of total hosts with this verification status
+ *                     example: 65.23
  *       400:
  *         description: Invalid parameters
  *         content:
@@ -519,6 +501,7 @@ const getHostInteractions = wrapAsync(async function (req, res) {
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "Only verified parameter invalid: Must be a boolean"
  *       500:
  *         description: Database error
  *         content:
@@ -592,6 +575,7 @@ ORDER BY
  *           type: integer
  *           minimum: 1
  *         description: Minimum number of listings a host must have (default is 3)
+ *         example: 5
  *       - in: query
  *         name: min_rating
  *         schema:
@@ -600,12 +584,14 @@ ORDER BY
  *           minimum: 1
  *           maximum: 5
  *         description: Minimum rating a host's listings must have (default is 4.7)
+ *         example: 4.8
  *       - in: query
  *         name: order_by
  *         schema:
  *           type: string
  *           enum: [host_name, total_listings_count, average_value_score_across_listings, min_listing_rating]
  *         description: Field to order the results by
+ *         example: "total_listings_count"
  *     responses:
  *       200:
  *         description: List of high-performing hosts
@@ -619,20 +605,25 @@ ORDER BY
  *                   host_id:
  *                     type: integer
  *                     description: Unique identifier of the host
+ *                     example: 12345
  *                   host_name:
  *                     type: string
  *                     description: Name of the host
+ *                     example: "John Smith"
  *                   total_listings_count:
  *                     type: integer
  *                     description: Total number of listings this host has
+ *                     example: 8
  *                   average_value_score_across_listings:
  *                     type: number
  *                     format: float
  *                     description: Average value score across all listings for this host
+ *                     example: 4.85
  *                   min_listing_rating:
  *                     type: number
  *                     format: float
  *                     description: Minimum rating among all listings for this host
+ *                     example: 4.7
  *       400:
  *         description: Invalid parameters
  *         content:
@@ -642,6 +633,7 @@ ORDER BY
  *               properties:
  *                 error:
  *                   type: string
+ *                   example: "Minimum listings parameter invalid: Must be at least 1"
  *       500:
  *         description: Database error
  *         content:
@@ -657,6 +649,11 @@ ORDER BY
 // Route: GET /hosts/high-performers
 // Finds hosts who consistently deliver high-quality experiences across their entire portfolio
 const getHighPerformerHosts = wrapAsync(async function (req, res) {
+
+  // Validate pagination parameters
+  const pagination = validatePagination(req.query, res);
+  if (!pagination) return; // Validation failed, response already sent
+  const { page, pageSize, offset } = pagination;
   // Validate parameters
   const minListingsValidation = validateParam(
     req.query.min_listings,
@@ -760,9 +757,11 @@ WHERE
     h.total_listings_count > $1
   AND hmr.min_listing_rating > $2
   AND hav.avg_value_score > $3
-${orderClause};
+${orderClause}
+LIMIT $4
+OFFSET $5;
 `,
-    [min_listings, min_rating, min_rating],
+    [min_listings, min_rating, min_rating, pageSize, offset],
     (err, data) => {
       if (err) {
         console.log(err);

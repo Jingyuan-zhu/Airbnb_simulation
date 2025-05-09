@@ -33,53 +33,6 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Aggregation function for interaction data
-  const aggregate = (data) => {
-    if (data.length === 0) return [];
-
-    let totalRatingGood = 0,
-      totalPriceGood = 0,
-      totalCountGood = 0;
-    let totalRatingOther = 0,
-      totalPriceOther = 0,
-      totalCountOther = 0;
-
-    for (let d of data) {
-      const ratingGood = parseFloat(d.avg_rating_good_interaction_hosts);
-      const priceGood = parseFloat(d.avg_price_good_interaction_hosts);
-      const countGood = parseInt(d.count_listings_good_interaction_hosts);
-      const ratingOther = parseFloat(d.avg_rating_other_hosts);
-      const priceOther = parseFloat(d.avg_price_other_hosts);
-      const countOther = parseInt(d.count_listings_other_hosts);
-
-      if (!isNaN(ratingGood) && !isNaN(countGood)) {
-        totalRatingGood += ratingGood * countGood;
-        totalCountGood += countGood;
-      }
-      if (!isNaN(priceGood) && !isNaN(countGood)) {
-        totalPriceGood += priceGood * countGood;
-      }
-      if (!isNaN(ratingOther) && !isNaN(countOther)) {
-        totalRatingOther += ratingOther * countOther;
-        totalCountOther += countOther;
-      }
-      if (!isNaN(priceOther) && !isNaN(countOther)) {
-        totalPriceOther += priceOther * countOther;
-      }
-    }
-
-    return [{
-      neighbourhood_cleansed: 'All Neighborhoods',
-      bedrooms: selectedBedrooms,
-      avg_rating_good_interaction_hosts: totalCountGood > 0 ? (totalRatingGood / totalCountGood).toFixed(2) : 'N/A',
-      avg_price_good_interaction_hosts: totalCountGood > 0 ? (totalPriceGood / totalCountGood).toFixed(2) : 'N/A',
-      count_listings_good_interaction_hosts: totalCountGood,
-      avg_rating_other_hosts: totalCountOther > 0 ? (totalRatingOther / totalCountOther).toFixed(2) : 'N/A',
-      avg_price_other_hosts: totalCountOther > 0 ? (totalPriceOther / totalCountOther).toFixed(2) : 'N/A',
-      count_listings_other_hosts: totalCountOther,
-    }];
-  };
-
   // Fetch all required data
   useEffect(() => {
     setLoading(true);
@@ -93,13 +46,15 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
           fetch(`http://${config.server_host}:${config.server_port}/hosts/interactions`),
         ]);
 
-        if (!hostTypesResponse.ok || !overviewResponse.ok || !interactionResponse.ok) {
-          throw new Error('Failed to fetch data');
-        }
+        // if (!hostTypesResponse.ok || !overviewResponse.ok || !interactionResponse.ok) {
+        //   throw new Error('Failed to fetch data');
+        // }
 
         const hostTypesData = await hostTypesResponse.json();
         const overviewData = await overviewResponse.json();
         const interactionData = await interactionResponse.json();
+        // const overviewData = [];
+        // const interactionData = [];
 
         // Filter hostTypesData for the selected neighbourhood
         const filteredHostTypesData = selectedNeighbourhood !== 'All'
@@ -117,7 +72,7 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to load data. Please try again later.');
+        // setError('Failed to load data. Please try again later.');
         setLoading(false);
       }
     };
@@ -125,13 +80,16 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
     fetchData();
   }, [selectedNeighbourhood]);
 
-  // Compute display interaction data with fallback
+  // Filter interaction data based on selection
   const { displayInteractionData, isFallback } = useMemo(() => {
-    if (!interactionData) return { displayInteractionData: [], isFallback: false };
+    if (!interactionData || interactionData.length === 0) {
+      return { displayInteractionData: [], isFallback: false };
+    }
 
+    // Direct filtering of neighborhood and bedroom data
     let filtered = interactionData.filter((d) => {
       if (selectedNeighbourhood !== 'All' && d.neighbourhood_cleansed !== selectedNeighbourhood) return false;
-      if (selectedBedrooms !== 'All' && d.bedrooms != parseInt(selectedBedrooms)) return false;
+      if (selectedBedrooms !== 'All' && d.bedrooms !== parseInt(selectedBedrooms)) return false;
       return true;
     });
 
@@ -142,11 +100,7 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
       isFallback = filtered.length > 0;
     }
 
-    if (selectedNeighbourhood === 'All') {
-      return { displayInteractionData: aggregate(filtered), isFallback: false };
-    } else {
-      return { displayInteractionData: filtered, isFallback };
-    }
+    return { displayInteractionData: filtered, isFallback };
   }, [interactionData, selectedNeighbourhood, selectedBedrooms]);
 
   // Calculate differences for Superhost vs Non-Superhost
@@ -222,24 +176,20 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
                         <TableCell>{row.neighbourhood_cleansed}</TableCell>
                         <TableCell>{row.bedrooms}</TableCell>
                         <TableCell>
-                          {row.avg_rating_good_interaction_hosts && !isNaN(parseFloat(row.avg_rating_good_interaction_hosts))
-                            ? parseFloat(row.avg_rating_good_interaction_hosts).toFixed(2)
-                            : 'N/A'}
+                          {row.avg_rating_good_interaction_hosts || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {row.avg_price_good_interaction_hosts && !isNaN(parseFloat(row.avg_price_good_interaction_hosts))
-                            ? `£${parseFloat(row.avg_price_good_interaction_hosts).toFixed(2)}`
+                          {row.avg_price_good_interaction_hosts
+                            ? `£${row.avg_price_good_interaction_hosts}`
                             : 'N/A'}
                         </TableCell>
                         <TableCell>{row.count_listings_good_interaction_hosts || 'N/A'}</TableCell>
                         <TableCell>
-                          {row.avg_rating_other_hosts && !isNaN(parseFloat(row.avg_rating_other_hosts))
-                            ? parseFloat(row.avg_rating_other_hosts).toFixed(2)
-                            : 'N/A'}
+                          {row.avg_rating_other_hosts || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {row.avg_price_other_hosts && !isNaN(parseFloat(row.avg_price_other_hosts))
-                            ? `£${parseFloat(row.avg_price_other_hosts).toFixed(2)}`
+                          {row.avg_price_other_hosts
+                            ? `£${row.avg_price_other_hosts}`
                             : 'N/A'}
                         </TableCell>
                         <TableCell>{row.count_listings_other_hosts || 'N/A'}</TableCell>
@@ -366,63 +316,76 @@ const NeighbourhoodVisualization = ({ selectedNeighbourhood, selectedBedrooms })
             <Typography variant="subtitle1" gutterBottom>
               Host Interaction Analysis
             </Typography>
-            
-            <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <SupervisorAccountIcon color="primary" sx={{ mr: 1 }} />
-                        <Typography variant="h6">Good Hosts</Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {displayInteractionData[0].count_listings_good_interaction_hosts} listings in this neighbourhood
-                      </Typography>
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" gutterBottom>
-                          <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-                            <StarIcon fontSize="small" sx={{ mr: 1 }} />
-                            Average Rating: {displayInteractionData[0].avg_rating_good_interaction_hosts}
-                          </Box>
+
+            {displayInteractionData.length > 0 ? (
+              <>
+                {isFallback && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    No exact match found for {selectedBedrooms} bedrooms. Showing all bedroom data for {selectedNeighbourhood}.
+                  </Alert>
+                )}
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <SupervisorAccountIcon color="primary" sx={{ mr: 1 }} />
+                          <Typography variant="h6">Good Hosts</Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {displayInteractionData[0].count_listings_good_interaction_hosts} listings in this neighbourhood
                         </Typography>
-                        <Typography variant="body2">
-                          <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-                            <AttachMoneyIcon fontSize="small" sx={{ mr: 1 }} />
-                            Average Price: £{displayInteractionData[0].avg_price_good_interaction_hosts}
-                          </Box>
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" gutterBottom>
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                              <StarIcon fontSize="small" sx={{ mr: 1 }} />
+                              Average Rating: {displayInteractionData[0].avg_rating_good_interaction_hosts}
+                            </Box>
+                          </Typography>
+                          <Typography variant="body2">
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                              <AttachMoneyIcon fontSize="small" sx={{ mr: 1 }} />
+                              Average Price: £{displayInteractionData[0].avg_price_good_interaction_hosts}
+                            </Box>
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <PersonIcon color="primary" sx={{ mr: 1 }} />
+                          <Typography variant="h6">Other Hosts</Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {displayInteractionData[0].count_listings_other_hosts} listings in this neighbourhood
                         </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" gutterBottom>
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                              <StarIcon fontSize="small" sx={{ mr: 1 }} />
+                              Average Rating: {displayInteractionData[0].avg_rating_other_hosts}
+                            </Box>
+                          </Typography>
+                          <Typography variant="body2">
+                            <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                              <AttachMoneyIcon fontSize="small" sx={{ mr: 1 }} />
+                              Average Price: £{displayInteractionData[0].avg_price_other_hosts}
+                            </Box>
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <PersonIcon color="primary" sx={{ mr: 1 }} />
-                        <Typography variant="h6">Other Hosts</Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {displayInteractionData[0].count_listings_other_hosts} listings in this neighbourhood
-                      </Typography>
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" gutterBottom>
-                          <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-                            <StarIcon fontSize="small" sx={{ mr: 1 }} />
-                            Average Rating: {displayInteractionData[0].avg_rating_other_hosts}
-                          </Box>
-                        </Typography>
-                        <Typography variant="body2">
-                          <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-                            <AttachMoneyIcon fontSize="small" sx={{ mr: 1 }} />
-                            Average Price: £{displayInteractionData[0].avg_price_other_hosts}
-                          </Box>
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              </>
+            ) : (
+              <Typography>
+                No interaction data available for {selectedNeighbourhood} with {selectedBedrooms !== 'All' ? `${selectedBedrooms} bedrooms` : 'the selected filters'}.
+              </Typography>
+            )}
 
           </Box>
         </>
