@@ -4,16 +4,31 @@ const config = require("./config.json");
 const routes = require("./routes");
 const swaggerUi = require("swagger-ui-express");
 const path = require("path");
+const bodyParser = require("body-parser");
 
 // Import swagger specification from separate file
 const swaggerSpec = require("./swagger");
 
+// Import authentication routes
+const authRouter = require('./routes/auth');
+
 const app = express();
+// Update CORS configuration to allow credentials and specify origin
 app.use(
   cors({
-    origin: "*",
+    origin: `http://${config.server_host}:3000`, // React default port
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
+
+// Body parser middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Use the auth router
+app.use('/auth', authRouter(app));
 
 // Define API endpoints for Airbnb data
 app.get("/home", routes.home);

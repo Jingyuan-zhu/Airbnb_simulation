@@ -7,8 +7,13 @@ import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import LoginIcon from "@mui/icons-material/Login";
+import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { NavLink } from "react-router-dom";
 import Typography from "@mui/material/Typography";
+import { useAuth } from "../context/AuthContext";
+import { Box, Menu, MenuItem, Button, Avatar } from "@mui/material";
 
 const mainListItems = [
   { text: "Home", icon: <HomeRoundedIcon />, route: "/" },
@@ -25,6 +30,23 @@ const secondaryListItems = [
 ];
 
 export default function MenuContent() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    handleClose();
+  };
+
   return (
     <Stack
       direction={"row"}
@@ -49,7 +71,7 @@ export default function MenuContent() {
           </ButtonBase>
         ))}
       </Stack>
-      <Stack direction={"row"}>
+      <Stack direction={"row"} alignItems="center">
         {secondaryListItems.map((item, index) => (
           <ButtonBase
             key={index}
@@ -61,6 +83,61 @@ export default function MenuContent() {
             </Typography>
           </ButtonBase>
         ))}
+        
+        {isAuthenticated ? (
+          <>
+            <Box 
+              onClick={handleClick}
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                p: 1, 
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  borderRadius: 1
+                }
+              }}
+            >
+              <Avatar 
+                sx={{ 
+                  width: 32, 
+                  height: 32, 
+                  bgcolor: 'primary.main',
+                  mr: 1
+                }}
+              >
+                {user?.displayName?.charAt(0) || user?.username?.charAt(0) || 'U'}
+              </Avatar>
+              <Typography variant="body1" sx={{ color: "text.primary" }}>
+                {user?.displayName || user?.username}
+              </Typography>
+            </Box>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button',
+              }}
+            >
+              <MenuItem onClick={handleLogout} dense>
+                <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+                Logout
+              </MenuItem>
+            </Menu>
+          </>
+        ) : (
+          <Button 
+            href="/login"
+            startIcon={<LoginIcon />}
+            variant="contained"
+            color="primary"
+            sx={{ my: 1, mx: 1 }}
+          >
+            Login
+          </Button>
+        )}
       </Stack>
     </Stack>
   );
